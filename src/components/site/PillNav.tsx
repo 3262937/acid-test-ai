@@ -1,10 +1,10 @@
 import { Link } from "@tanstack/react-router";
 
-const links = [
+const links: { label: string; to: string; hash?: string }[] = [
   { label: "Product", to: "/" },
-  { label: "Frameworks", to: "/" },
-  { label: "Pricing", to: "/" },
-  { label: "Docs", to: "/" },
+  { label: "Frameworks", to: "/", hash: "protocol" },
+  { label: "Pricing", to: "/", hash: "cta" },
+  { label: "Docs", to: "/docs" },
   { label: "Playground", to: "/playground" },
 ];
 
@@ -22,6 +22,7 @@ export function PillNav() {
             <Link
               key={l.label}
               to={l.to}
+              hash={l.hash}
               className="label-mono text-[11px] transition-colors hover:text-acid"
             >
               {l.label}
