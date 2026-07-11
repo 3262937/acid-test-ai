@@ -1,6 +1,6 @@
 export function FinalCta() {
   return (
-    <section className="mx-auto max-w-[1200px] px-6 py-24 md:py-32">
+    <section id="cta" className="mx-auto max-w-[1200px] px-6 py-24 md:py-32">
       <div className="folder-tab relative overflow-hidden p-12 pt-16 text-center md:p-20 md:pt-20">
         <div className="pointer-events-none absolute inset-0 -z-10 bg-[radial-gradient(circle_at_50%_100%,rgba(197,239,87,0.14),transparent_60%)]" />
         <div className="label-mono mb-4 text-acid">§ 04 — Enroll</div>
