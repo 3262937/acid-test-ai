@@ -1,24 +1,42 @@
 import { createFileRoute } from "@tanstack/react-router";
+import { PillNav } from "@/components/site/PillNav";
+import { Hero } from "@/components/site/Hero";
+import { Marquee } from "@/components/site/Marquee";
+import { Protocol } from "@/components/site/Protocol";
+import { LiveDemo } from "@/components/site/LiveDemo";
+import { FinalCta, Footer } from "@/components/site/FinalCta";
 
-// No head() here: the home route inherits title/description/og/twitter from
-// __root.tsx, and ships no og:image so serve-time hosting can inject the
-// project's social preview (explicit og:image or latest screenshot).
 export const Route = createFileRoute("/")({
   component: Index,
+  head: () => ({
+    meta: [
+      { title: "AcidTest — Every bug meets its acid test" },
+      {
+        name: "description",
+        content:
+          "AI-powered test synthesis for QA engineers. Paste a user story, get runnable Playwright, Cypress and Selenium suites in seconds.",
+      },
+      { property: "og:title", content: "AcidTest — Every bug meets its acid test" },
+      {
+        property: "og:description",
+        content: "Paste a user story. Get runnable Playwright, Cypress and Selenium suites.",
+      },
+      { property: "og:type", content: "website" },
+    ],
+    links: [{ rel: "canonical", href: "/" }],
+  }),
 });
 
-// IMPORTANT: Replace this placeholder. See ./README.md for routing conventions.
 function Index() {
   return (
-    <div
-      className="flex min-h-screen items-center justify-center"
-      style={{ backgroundColor: "#fcfbf8" }}
-    >
-      <img
-        data-lovable-blank-page-placeholder="REMOVE_THIS"
-        src="https://cdn.gpteng.co/blank-app-v1.svg"
-        alt="Your app will live here!"
-      />
-    </div>
+    <main className="relative min-h-screen bg-carbon text-ink">
+      <PillNav />
+      <Hero />
+      <Marquee />
+      <Protocol />
+      <LiveDemo />
+      <FinalCta />
+      <Footer />
+    </main>
   );
 }
