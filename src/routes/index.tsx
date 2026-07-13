@@ -6,6 +6,7 @@ import { Marquee } from "@/components/site/Marquee";
 import { Protocol } from "@/components/site/Protocol";
 import { LiveDemo } from "@/components/site/LiveDemo";
 import { ThreatDetection } from "@/components/site/ThreatDetection";
+import { Pricing } from "@/components/site/Pricing";
 import { FinalCta, Footer } from "@/components/site/FinalCta";
 
 export const Route = createFileRoute("/")({
@@ -39,6 +40,7 @@ function Index() {
       <Protocol />
       <LiveDemo />
       <ThreatDetection />
+      <Pricing />
       <FinalCta />
       <Footer />
     </main>
