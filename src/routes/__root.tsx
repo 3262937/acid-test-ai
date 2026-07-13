@@ -14,23 +14,35 @@ import { reportLovableError } from "../lib/lovable-error-reporting";
 
 function NotFoundComponent() {
   return (
-    <div className="flex min-h-screen items-center justify-center bg-background px-4">
-      <div className="max-w-md text-center">
-        <h1 className="text-7xl font-bold text-foreground">404</h1>
-        <h2 className="mt-4 text-xl font-semibold text-foreground">Page not found</h2>
-        <p className="mt-2 text-sm text-muted-foreground">
-          The page you're looking for doesn't exist or has been moved.
+    <main className="relative flex min-h-screen items-center justify-center bg-carbon px-6 text-ink">
+      <div className="pointer-events-none absolute inset-0 -z-10 bg-[radial-gradient(circle_at_50%_30%,rgba(197,239,87,0.10),transparent_60%),radial-gradient(circle_at_50%_100%,rgba(169,145,255,0.08),transparent_60%)]" />
+      <div className="folder-tab w-full max-w-lg p-10 pt-14 text-center">
+        <div className="label-mono mb-3 text-acid">§ 404 — Missing</div>
+        <div className="font-display text-[120px] font-bold leading-none tracking-[-0.04em] text-ink md:text-[160px]">
+          4<span className="italic text-acid">0</span>4
+        </div>
+        <h1 className="mt-4 font-display text-2xl font-semibold tracking-[-0.01em]">
+          This page slipped the net.
+        </h1>
+        <p className="mt-2 text-sm text-muted-ink">
+          The URL you followed doesn't exist, moved, or was never synthesized.
         </p>
-        <div className="mt-6">
+        <div className="mt-8 flex flex-wrap justify-center gap-3">
           <Link
             to="/"
-            className="inline-flex items-center justify-center rounded-md bg-primary px-4 py-2 text-sm font-medium text-primary-foreground transition-colors hover:bg-primary/90"
+            className="inline-flex items-center justify-center rounded-md bg-acid px-5 py-3 font-mono text-[11px] font-bold uppercase tracking-widest text-[#0a0a0a] shadow-[0_0_24px_-4px_rgba(197,239,87,0.6)] transition-all hover:shadow-[0_0_40px_-2px_rgba(197,239,87,0.9)]"
           >
-            Go home
+            Back to home →
+          </Link>
+          <Link
+            to="/faq"
+            className="inline-flex items-center justify-center rounded-md border border-white/10 bg-white/[0.03] px-5 py-3 font-mono text-[11px] font-semibold uppercase tracking-widest text-ink transition-all hover:border-acid/40 hover:text-acid"
+          >
+            Read the FAQ
           </Link>
         </div>
       </div>
-    </div>
+    </main>
   );
 }
 
@@ -42,33 +54,43 @@ function ErrorComponent({ error, reset }: { error: Error; reset: () => void }) {
   }, [error]);
 
   return (
-    <div className="flex min-h-screen items-center justify-center bg-background px-4">
-      <div className="max-w-md text-center">
-        <h1 className="text-xl font-semibold tracking-tight text-foreground">
-          This page didn't load
+    <main className="relative flex min-h-screen items-center justify-center bg-carbon px-6 text-ink">
+      <div className="pointer-events-none absolute inset-0 -z-10 bg-[radial-gradient(circle_at_50%_20%,rgba(255,122,122,0.10),transparent_60%),radial-gradient(circle_at_50%_100%,rgba(169,145,255,0.08),transparent_60%)]" />
+      <div className="folder-tab w-full max-w-lg p-10 pt-14 text-center">
+        <div className="label-mono mb-3 text-[#ff9c9c]">§ 500 — Ruptured</div>
+        <div className="font-display text-[120px] font-bold leading-none tracking-[-0.04em] text-ink md:text-[160px]">
+          5<span className="italic text-[#ff9c9c]">0</span>0
+        </div>
+        <h1 className="mt-4 font-display text-2xl font-semibold tracking-[-0.01em]">
+          The reaction failed.
         </h1>
-        <p className="mt-2 text-sm text-muted-foreground">
-          Something went wrong on our end. You can try refreshing or head back home.
+        <p className="mt-2 text-sm text-muted-ink">
+          Something went wrong on our end. Retry the run or head back home.
         </p>
-        <div className="mt-6 flex flex-wrap justify-center gap-2">
+        {error?.message && (
+          <pre className="mt-6 max-h-32 overflow-auto rounded-md border border-white/10 bg-black/40 px-3 py-2 text-left font-mono text-[11px] text-muted-ink">
+            {error.message}
+          </pre>
+        )}
+        <div className="mt-8 flex flex-wrap justify-center gap-3">
           <button
             onClick={() => {
               router.invalidate();
               reset();
             }}
-            className="inline-flex items-center justify-center rounded-md bg-primary px-4 py-2 text-sm font-medium text-primary-foreground transition-colors hover:bg-primary/90"
+            className="inline-flex items-center justify-center rounded-md bg-acid px-5 py-3 font-mono text-[11px] font-bold uppercase tracking-widest text-[#0a0a0a] shadow-[0_0_24px_-4px_rgba(197,239,87,0.6)] transition-all hover:shadow-[0_0_40px_-2px_rgba(197,239,87,0.9)]"
           >
             Try again
           </button>
-          <a
-            href="/"
-            className="inline-flex items-center justify-center rounded-md border border-input bg-background px-4 py-2 text-sm font-medium text-foreground transition-colors hover:bg-accent"
+          <Link
+            to="/"
+            className="inline-flex items-center justify-center rounded-md border border-white/10 bg-white/[0.03] px-5 py-3 font-mono text-[11px] font-semibold uppercase tracking-widest text-ink transition-all hover:border-acid/40 hover:text-acid"
           >
             Go home
-          </a>
+          </Link>
         </div>
       </div>
-    </div>
+    </main>
   );
 }
 
