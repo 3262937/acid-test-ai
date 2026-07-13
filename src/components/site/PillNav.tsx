@@ -7,7 +7,7 @@ import { supabase } from "@/integrations/supabase/client";
 const links: { label: string; to: string; hash?: string }[] = [
   { label: "Product", to: "/" },
   { label: "Frameworks", to: "/", hash: "protocol" },
-  { label: "Pricing", to: "/", hash: "cta" },
+  { label: "Pricing", to: "/", hash: "pricing" },
   { label: "Docs", to: "/docs" },
   { label: "Playground", to: "/playground" },
 ];
