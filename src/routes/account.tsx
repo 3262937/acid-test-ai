@@ -735,9 +735,7 @@ function CustomRagPanel() {
 
       <div className="mb-5 flex flex-wrap items-center gap-2">
         <input
-          ref={(el) => {
-            (el) => { filesInputRef.current = el; }(el);
-          }}
+          ref={filesInputRef}
           type="file"
           multiple
           accept={accept}
@@ -748,9 +746,7 @@ function CustomRagPanel() {
           }}
         />
         <input
-          ref={(el) => {
-            (el) => { folderInputRef.current = el; }(el);
-          }}
+          ref={folderInputRef}
           type="file"
           accept={accept}
           className="hidden"
