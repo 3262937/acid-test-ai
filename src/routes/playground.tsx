@@ -260,11 +260,18 @@ function Playground() {
             />
 
             <label className="label-mono block text-acid">Engine</label>
-            <div className="grid grid-cols-3 gap-2">
-              {(["lovable", "openai", "anthropic"] as Engine[]).map((e) => {
+            <div className="grid grid-cols-2 gap-2 sm:grid-cols-4">
+              {(["lovable", "openai", "anthropic", "nvidia"] as Engine[]).map((e) => {
                 const disabled =
                   e !== "lovable" && (!user || !savedProviders.includes(e as Provider));
-                const label = e === "lovable" ? "Credits" : e === "openai" ? "OpenAI" : "Claude";
+                const label =
+                  e === "lovable"
+                    ? "Credits"
+                    : e === "openai"
+                      ? "OpenAI"
+                      : e === "anthropic"
+                        ? "Claude"
+                        : "NVIDIA (free)";
                 return (
                   <button
                     key={e}
@@ -292,8 +299,11 @@ function Playground() {
             <p className="font-mono text-[10px] text-muted-ink">
               {engine === "lovable"
                 ? "Uses 1 credit per generation."
-                : "Runs on your key — no credit charged."}
+                : engine === "nvidia"
+                  ? "Runs on your free NVIDIA NIM key — no credit charged."
+                  : "Runs on your key — no credit charged."}
             </p>
+
 
             <label className="label-mono block text-acid">Framework</label>
             <FrameworkPicker value={fw} onChange={setFw} />
