@@ -506,6 +506,7 @@ function ByoKeysPanel() {
   const [keys, setKeys] = useState<UserKeyStatus[]>([]);
   const [openai, setOpenai] = useState("");
   const [anthropic, setAnthropic] = useState("");
+  const [nvidia, setNvidia] = useState("");
   const [busy, setBusy] = useState<Provider | null>(null);
 
   const refresh = useCallback(async () => {
@@ -520,14 +521,18 @@ function ByoKeysPanel() {
     void refresh();
   }, [refresh]);
 
+  const providerLabel = (p: Provider) =>
+    p === "openai" ? "OpenAI" : p === "anthropic" ? "Claude" : "NVIDIA NIM";
+
   async function handleSave(provider: Provider, value: string) {
     if (!value.trim()) return;
     setBusy(provider);
     try {
       await save({ data: { provider, apiKey: value.trim() } });
-      toast.success(`${provider === "openai" ? "OpenAI" : "Claude"} key saved`);
+      toast.success(`${providerLabel(provider)} key saved`);
       if (provider === "openai") setOpenai("");
-      else setAnthropic("");
+      else if (provider === "anthropic") setAnthropic("");
+      else setNvidia("");
       await refresh();
     } catch (err) {
       toast.error("Save failed", { description: (err as Error).message });
