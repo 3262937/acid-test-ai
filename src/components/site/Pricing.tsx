@@ -1,8 +1,12 @@
-import { Link } from "@tanstack/react-router";
+import { Link, useNavigate } from "@tanstack/react-router";
 import { useState } from "react";
-import { Check, Zap } from "lucide-react";
+import { Check, Zap, X } from "lucide-react";
+import { useSession } from "@/hooks/use-session";
+import { isPaymentsConfigured } from "@/lib/stripe";
+import { StripeEmbeddedCheckoutInline } from "./StripeEmbeddedCheckout";
 
 type Tier = {
+  id: string;
   name: string;
   credits: number;
   price: number;
@@ -14,18 +18,20 @@ type Tier = {
 
 const TIERS: Tier[] = [
   {
+    id: "starter",
     name: "Starter",
     credits: 200,
     price: 19,
     perCredit: "$0.095 / credit",
     perks: [
-      "200 test synthesis credits",
+      "200 test synthesis credits / month",
       "Playwright · Cypress · Selenium",
       "1 project workspace",
       "Community support",
     ],
   },
   {
+    id: "hunter",
     name: "Hunter",
     credits: 1000,
     price: 79,
@@ -33,19 +39,20 @@ const TIERS: Tier[] = [
     tag: "Most popular",
     highlight: true,
     perks: [
-      "1,000 credits — refill anytime",
+      "1,000 credits / month",
       "Threat Detection scans",
       "5 project workspaces",
       "Priority queue + email support",
     ],
   },
   {
+    id: "lab",
     name: "Lab",
     credits: 5000,
     price: 299,
     perCredit: "$0.060 / credit",
     perks: [
-      "5,000 credits + rollover",
+      "5,000 credits / month",
       "Team seats (up to 10)",
       "MCP + CLI access",
       "SLA + dedicated Slack channel",
@@ -54,13 +61,33 @@ const TIERS: Tier[] = [
 ];
 
 const TOPUPS = [
-  { credits: 100, price: 12 },
-  { credits: 500, price: 49 },
-  { credits: 2000, price: 169 },
+  { id: "topup_100", credits: 100, price: 12 },
+  { id: "topup_500", credits: 500, price: 49 },
+  { id: "topup_2000", credits: 2000, price: 169 },
 ];
 
 export function Pricing() {
+  const { user } = useSession();
+  const navigate = useNavigate();
   const [topup, setTopup] = useState(1);
+  const [checkoutPriceId, setCheckoutPriceId] = useState<string | null>(null);
+
+  function handleBuy(priceId: string) {
+    if (!user) {
+      navigate({ to: "/login" });
+      return;
+    }
+    if (!isPaymentsConfigured()) {
+      alert("Payments are not configured for this build yet.");
+      return;
+    }
+    setCheckoutPriceId(priceId);
+  }
+
+  const returnUrl =
+    typeof window !== "undefined"
+      ? `${window.location.origin}/success?session_id={CHECKOUT_SESSION_ID}`
+      : "/success?session_id={CHECKOUT_SESSION_ID}";
 
   return (
     <section id="pricing" className="relative mx-auto max-w-[1200px] px-6 py-24 md:py-32">
@@ -104,7 +131,7 @@ export function Pricing() {
               <span className="font-display text-5xl font-bold tracking-[-0.02em]">
                 ${t.price}
               </span>
-              <span className="label-mono">/ one-time</span>
+              <span className="label-mono">/ month</span>
             </div>
             <div className="mt-1 font-mono text-[12px] text-acid">
               {t.credits.toLocaleString()} credits · {t.perCredit}
@@ -119,8 +146,8 @@ export function Pricing() {
               ))}
             </ul>
 
-            <Link
-              to="/login"
+            <button
+              onClick={() => handleBuy(t.id)}
               className={[
                 "mt-8 inline-flex items-center justify-center rounded-md px-5 py-3 font-mono text-[11px] font-bold uppercase tracking-widest transition-all",
                 t.highlight
@@ -128,8 +155,8 @@ export function Pricing() {
                   : "border border-white/10 bg-white/[0.03] text-ink hover:border-acid/40 hover:text-acid",
               ].join(" ")}
             >
-              Buy {t.name} →
-            </Link>
+              {user ? `Subscribe to ${t.name} →` : `Buy ${t.name} →`}
+            </button>
           </div>
         ))}
       </div>
@@ -142,7 +169,7 @@ export function Pricing() {
             Out of credits? Add more in one click.
           </h3>
           <p className="mt-1 text-sm text-muted-ink">
-            Pay only for what you burn. Top-ups stack on top of any active plan.
+            One-time top-ups stack on top of any active plan.
           </p>
         </div>
         <div className="flex flex-col gap-3">
@@ -162,12 +189,12 @@ export function Pricing() {
               </button>
             ))}
           </div>
-          <Link
-            to="/login"
+          <button
+            onClick={() => handleBuy(TOPUPS[topup].id)}
             className="inline-flex items-center justify-center rounded-md bg-acid px-5 py-3 font-mono text-[11px] font-bold uppercase tracking-widest text-[#0a0a0a] shadow-[0_0_24px_-4px_rgba(197,239,87,0.6)] transition-all hover:shadow-[0_0_40px_-2px_rgba(197,239,87,0.9)]"
           >
             Add {TOPUPS[topup].credits.toLocaleString()} credits →
-          </Link>
+          </button>
         </div>
       </div>
 
@@ -177,6 +204,33 @@ export function Pricing() {
           sales@acidtest.dev
         </a>
       </p>
+
+      {/* Embedded checkout modal */}
+      {checkoutPriceId && (
+        <div
+          className="fixed inset-0 z-[100] flex items-center justify-center bg-black/80 p-4 backdrop-blur"
+          onClick={() => setCheckoutPriceId(null)}
+        >
+          <div
+            className="relative w-full max-w-[560px] rounded-xl border border-white/10 bg-carbon p-4"
+            onClick={(e) => e.stopPropagation()}
+          >
+            <button
+              onClick={() => setCheckoutPriceId(null)}
+              className="absolute right-3 top-3 z-10 flex h-8 w-8 items-center justify-center rounded-full bg-white/5 text-ink hover:bg-white/10"
+              aria-label="Close checkout"
+            >
+              <X size={16} />
+            </button>
+            <div className="max-h-[85vh] overflow-y-auto pt-6">
+              <StripeEmbeddedCheckoutInline
+                priceId={checkoutPriceId}
+                returnUrl={returnUrl}
+              />
+            </div>
+          </div>
+        </div>
+      )}
     </section>
   );
 }
