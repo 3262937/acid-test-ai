@@ -35,6 +35,9 @@ function Playground() {
   const [fw, setFw] = useState<Framework>("Playwright");
   const [runKey, setRunKey] = useState(0);
   const [visible, setVisible] = useState(true);
+  const [saving, setSaving] = useState(false);
+  const { user } = useSession();
+  const save = useServerFn(saveTest);
 
   const cases = [
     { id: "TC-001", prio: "P0", title: "Valid discount code updates total live" },
@@ -48,16 +51,44 @@ function Playground() {
     setTimeout(() => setVisible(true), 60);
   }
 
+  async function handleSave() {
+    if (!user) {
+      toast.error("Sign in to save tests");
+      return;
+    }
+    setSaving(true);
+    try {
+      const code = generateCode(fw, story);
+      const title = story.trim().slice(0, 80) || `${fw} test`;
+      await save({ data: { title, story, framework: fw, code } });
+      toast.success("Saved", { description: "Find it under Saved tests." });
+    } catch (e) {
+      toast.error("Save failed", { description: (e as Error).message });
+    } finally {
+      setSaving(false);
+    }
+  }
+
   return (
     <main className="relative min-h-screen bg-carbon text-ink">
       <PillNav />
       <section className="mx-auto max-w-[1200px] px-6 pt-40 pb-16 md:pt-48">
-        <div className="mb-10">
-          <div className="label-mono mb-3 text-acid">§ Playground</div>
-          <h1 className="font-display text-4xl font-bold tracking-[-0.02em] md:text-5xl">
-            Synthesize a suite.
-          </h1>
+        <div className="mb-10 flex flex-wrap items-end justify-between gap-4">
+          <div>
+            <div className="label-mono mb-3 text-acid">§ Playground</div>
+            <h1 className="font-display text-4xl font-bold tracking-[-0.02em] md:text-5xl">
+              Synthesize a suite.
+            </h1>
+          </div>
+          <Link
+            to="/saved"
+            className="inline-flex items-center gap-1.5 rounded-md border border-white/10 bg-white/[0.03] px-3 py-2 font-mono text-[11px] font-semibold uppercase tracking-widest text-ink transition-all hover:border-acid/40 hover:text-acid"
+          >
+            <Bookmark size={12} />
+            Saved
+          </Link>
         </div>
+
 
         <div className="grid grid-cols-1 gap-6 lg:grid-cols-[420px_1fr]">
           <div className="folder-tab space-y-4 p-6 pt-8">
