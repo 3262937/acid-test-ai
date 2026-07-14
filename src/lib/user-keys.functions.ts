@@ -1,9 +1,11 @@
 import { createServerFn } from "@tanstack/react-start";
 import { requireSupabaseAuth } from "@/integrations/supabase/auth-middleware";
 
-export type Provider = "openai" | "anthropic";
+export type Provider = "openai" | "anthropic" | "nvidia";
 
 export type UserKeyStatus = { provider: Provider; last4: string; updated_at: string };
+
+const PROVIDERS: Provider[] = ["openai", "anthropic", "nvidia"];
 
 export const listUserKeys = createServerFn({ method: "GET" })
   .middleware([requireSupabaseAuth])
@@ -35,13 +37,15 @@ export const listUserKeys = createServerFn({ method: "GET" })
 export const saveUserKey = createServerFn({ method: "POST" })
   .middleware([requireSupabaseAuth])
   .inputValidator((data: { provider: Provider; apiKey: string }) => {
-    if (!["openai", "anthropic"].includes(data.provider)) throw new Error("Invalid provider");
+    if (!PROVIDERS.includes(data.provider)) throw new Error("Invalid provider");
     const k = data.apiKey.trim();
     if (k.length < 20) throw new Error("Key looks too short");
     if (data.provider === "openai" && !k.startsWith("sk-"))
       throw new Error("OpenAI keys start with sk-");
     if (data.provider === "anthropic" && !k.startsWith("sk-ant-"))
       throw new Error("Anthropic keys start with sk-ant-");
+    if (data.provider === "nvidia" && !k.startsWith("nvapi-"))
+      throw new Error("NVIDIA NIM keys start with nvapi-");
     return { provider: data.provider, apiKey: k };
   })
   .handler(async ({ data, context }) => {
@@ -77,7 +81,7 @@ export const saveUserKey = createServerFn({ method: "POST" })
 export const deleteUserKey = createServerFn({ method: "POST" })
   .middleware([requireSupabaseAuth])
   .inputValidator((data: { provider: Provider }) => {
-    if (!["openai", "anthropic"].includes(data.provider)) throw new Error("Invalid provider");
+    if (!PROVIDERS.includes(data.provider)) throw new Error("Invalid provider");
     return data;
   })
   .handler(async ({ data, context }) => {
