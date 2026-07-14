@@ -46,11 +46,52 @@ async function meter(key: AuthedKey, endpoint: string, status_code: number) {
   ]);
 }
 
-function json(body: unknown, status = 200): Response {
+function json(body: unknown, status = 200, headers: Record<string, string> = {}): Response {
   return new Response(JSON.stringify(body), {
     status,
-    headers: { "Content-Type": "application/json" },
+    headers: { "Content-Type": "application/json", ...headers },
   });
+}
+
+const RATE_LIMIT_MAX = 60;
+const RATE_LIMIT_WINDOW_MS = 60_000;
+const rateBuckets = new Map<string, number[]>();
+
+function checkRateLimit(keyId: string): { ok: true } | { ok: false; retryAfter: number } {
+  const now = Date.now();
+  const cutoff = now - RATE_LIMIT_WINDOW_MS;
+  const hits = (rateBuckets.get(keyId) ?? []).filter((t) => t > cutoff);
+  if (hits.length >= RATE_LIMIT_MAX) {
+    const retryAfter = Math.max(1, Math.ceil((hits[0] + RATE_LIMIT_WINDOW_MS - now) / 1000));
+    rateBuckets.set(keyId, hits);
+    return { ok: false, retryAfter };
+  }
+  hits.push(now);
+  rateBuckets.set(keyId, hits);
+  if (rateBuckets.size > 10_000) {
+    for (const [k, v] of rateBuckets) {
+      const kept = v.filter((t) => t > cutoff);
+      if (kept.length === 0) rateBuckets.delete(k);
+      else rateBuckets.set(k, kept);
+    }
+  }
+  return { ok: true };
+}
+
+function rateLimitResponse(retryAfter: number): Response {
+  return json(
+    {
+      error: "rate_limit_exceeded",
+      message: `Too many requests. Limit is ${RATE_LIMIT_MAX} requests per minute per API key.`,
+      retry_after_seconds: retryAfter,
+    },
+    429,
+    {
+      "Retry-After": String(retryAfter),
+      "X-RateLimit-Limit": String(RATE_LIMIT_MAX),
+      "X-RateLimit-Remaining": "0",
+    },
+  );
 }
 
 export const Route = createFileRoute("/api/public/v1/tests")({
