@@ -66,7 +66,7 @@ export function PillNav() {
               key={l.label}
               to={l.to}
               hash={l.hash}
-              className="rounded-full px-3 py-1.5 font-mono text-[11px] uppercase tracking-widest text-muted-ink transition-colors hover:text-acid"
+              className="rounded-full px-3 py-1.5 font-mono text-[11px] uppercase tracking-widest text-muted-ink transition-colors hover:text-acid focus-visible:outline focus-visible:outline-2 focus-visible:outline-acid/60 focus-visible:outline-offset-2"
             >
               {l.label}
             </Link>
@@ -84,7 +84,7 @@ export function PillNav() {
             <div className="relative">
               <button
                 onClick={() => setOpen((o) => !o)}
-                className="flex h-9 w-9 items-center justify-center overflow-hidden rounded-full bg-acid font-mono text-[11px] font-bold text-[#0a0a0a] transition-all hover:shadow-[0_0_20px_rgba(197,239,87,0.5)]"
+                className="flex h-9 w-9 items-center justify-center overflow-hidden rounded-full bg-acid font-mono text-[11px] font-bold text-[#0a0a0a] transition-all hover:shadow-[0_0_20px_rgba(197,239,87,0.5)] focus-visible:outline focus-visible:outline-2 focus-visible:outline-acid/60 focus-visible:outline-offset-2"
                 aria-label="Account menu"
               >
                 {avatarUrl ? (

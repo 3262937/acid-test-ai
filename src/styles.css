@@ -60,6 +60,11 @@
     font-family: var(--font-display);
     -webkit-font-smoothing: antialiased;
   }
+  @media (prefers-reduced-motion: no-preference) {
+    html {
+      scroll-behavior: smooth;
+    }
+  }
   ::selection {
     background: rgba(197, 239, 87, 0.35);
     color: #070708;
