@@ -72,7 +72,30 @@ export function ThreatDetection() {
   const [running, setRunning] = useState(false);
   const [logs, setLogs] = useState<LogLine[]>([]);
   const [verdicts, setVerdicts] = useState<Verdict[]>([]);
+  const [uploading, setUploading] = useState(false);
   const timeouts = useRef<number[]>([]);
+  const fileRef = useRef<HTMLInputElement>(null);
+
+  async function handleFile(e: React.ChangeEvent<HTMLInputElement>) {
+    const file = e.target.files?.[0];
+    e.target.value = "";
+    if (!file) return;
+    if (file.size > 2 * 1024 * 1024) {
+      toast.error("File too large", { description: "Max 2 MB." });
+      return;
+    }
+    setUploading(true);
+    try {
+      const text = await file.text();
+      setOwn(text.slice(0, 50_000));
+      setTab("own");
+      toast.success("Loaded", { description: `${file.name} → editor` });
+    } catch (err) {
+      toast.error("Read failed", { description: (err as Error).message });
+    } finally {
+      setUploading(false);
+    }
+  }
 
   const activeCode = tab === "generated" ? DEFAULT_GENERATED : own;
   const framework = useMemo(() => detectFramework(activeCode), [activeCode]);
