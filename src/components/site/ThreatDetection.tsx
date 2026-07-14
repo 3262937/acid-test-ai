@@ -53,10 +53,81 @@ function extractTitles(code: string): string[] {
   return titles.slice(0, 6);
 }
 
-function detectFramework(code: string): "Playwright" | "Cypress" | "Selenium" | "Custom" {
-  if (/@playwright\/test|await page\./.test(code)) return "Playwright";
-  if (/\bcy\.|cypress/i.test(code)) return "Cypress";
-  if (/selenium-webdriver|By\.|WebDriver/i.test(code)) return "Selenium";
+type DetectedFw =
+  | "Playwright"
+  | "Cypress"
+  | "Selenium (Java)"
+  | "Selenium (Python)"
+  | "Selenium (C#)"
+  | "Puppeteer"
+  | "WebdriverIO"
+  | "Appium"
+  | "Espresso"
+  | "XCUITest"
+  | "RestAssured"
+  | "Postman"
+  | "Robot Framework"
+  | "Cucumber"
+  | "JUnit"
+  | "TestNG"
+  | "Custom";
+
+const FW_LANG: Record<DetectedFw, string> = {
+  Playwright: "TypeScript",
+  Cypress: "TypeScript",
+  "Selenium (Java)": "Java",
+  "Selenium (Python)": "Python",
+  "Selenium (C#)": "C#",
+  Puppeteer: "TypeScript",
+  WebdriverIO: "TypeScript",
+  Appium: "JavaScript",
+  Espresso: "Kotlin",
+  XCUITest: "Swift",
+  RestAssured: "Java",
+  Postman: "JSON",
+  "Robot Framework": "Robot",
+  Cucumber: "Gherkin",
+  JUnit: "Java",
+  TestNG: "Java",
+  Custom: "Unknown",
+};
+
+function detectFramework(code: string, filename?: string): DetectedFw {
+  const name = (filename ?? "").toLowerCase();
+  const src = code ?? "";
+
+  // Filename-first hints (unambiguous)
+  if (name.endsWith(".feature")) return "Cucumber";
+  if (name.endsWith(".robot")) return "Robot Framework";
+  if (name.endsWith(".swift")) return "XCUITest";
+  if (name.endsWith(".kt")) return "Espresso";
+  if (name.endsWith(".postman.json") || name.endsWith(".postman_collection.json"))
+    return "Postman";
+
+  // Content signatures — most specific first
+  if (/@playwright\/test|from ["']playwright|await page\.getBy/.test(src)) return "Playwright";
+  if (/\bcy\.\w+\(|\/\/\/\s*<reference types="cypress"|cypress\.config/i.test(src)) return "Cypress";
+  if (/@wdio\/|browser\.\$\(|wdio\.conf/i.test(src)) return "WebdriverIO";
+  if (/from ["']puppeteer|require\(["']puppeteer["']\)|puppeteer\.launch/.test(src))
+    return "Puppeteer";
+  if (/io\.appium|AppiumDriver|webdriverio.*appium/i.test(src)) return "Appium";
+  if (/androidx\.test\.espresso|onView\(|withId\(/.test(src)) return "Espresso";
+  if (/XCTestCase|XCUIApplication|import XCTest/.test(src)) return "XCUITest";
+  if (/io\.restassured|RestAssured\.|given\(\)\s*\.\s*when/.test(src)) return "RestAssured";
+  if (/"_postman_id"|"info"\s*:\s*\{[^}]*"schema"\s*:\s*"https:\/\/schema\.getpostman/i.test(src))
+    return "Postman";
+  if (/\*\*\*\s*Settings\s*\*\*\*|Library\s+SeleniumLibrary|Resource\s+/.test(src))
+    return "Robot Framework";
+  if (/^\s*Feature:\s|^\s*Scenario:\s|Given\s.+\nWhen\s/m.test(src)) return "Cucumber";
+  if (/@Test\b[\s\S]*org\.testng|import\s+org\.testng/.test(src)) return "TestNG";
+  if (/import\s+org\.junit|@Test\b.*junit|org\.junit\.jupiter/i.test(src)) return "JUnit";
+  if (/selenium\.webdriver|from selenium|import\s+webdriver/i.test(src)) {
+    if (/def\s+test_|import\s+pytest|from selenium/.test(src)) return "Selenium (Python)";
+    if (/using\s+OpenQA\.Selenium|\[Test\]|NUnit/.test(src)) return "Selenium (C#)";
+    return "Selenium (Java)";
+  }
+  if (/using\s+OpenQA\.Selenium/.test(src)) return "Selenium (C#)";
+
   return "Custom";
 }
 
@@ -73,6 +144,7 @@ export function ThreatDetection() {
   const [logs, setLogs] = useState<LogLine[]>([]);
   const [verdicts, setVerdicts] = useState<Verdict[]>([]);
   const [uploading, setUploading] = useState(false);
+  const [uploadedName, setUploadedName] = useState<string | null>(null);
   const timeouts = useRef<number[]>([]);
   const fileRef = useRef<HTMLInputElement>(null);
 
@@ -88,8 +160,10 @@ export function ThreatDetection() {
     try {
       const text = await file.text();
       setOwn(text.slice(0, 50_000));
+      setUploadedName(file.name);
       setTab("own");
-      toast.success("Loaded", { description: `${file.name} → editor` });
+      const detected = detectFramework(text, file.name);
+      toast.success(`Detected: ${detected}`, { description: `${file.name} → editor` });
     } catch (err) {
       toast.error("Read failed", { description: (err as Error).message });
     } finally {
@@ -98,7 +172,10 @@ export function ThreatDetection() {
   }
 
   const activeCode = tab === "generated" ? DEFAULT_GENERATED : own;
-  const framework = useMemo(() => detectFramework(activeCode), [activeCode]);
+  const framework = useMemo(
+    () => detectFramework(activeCode, tab === "own" ? uploadedName ?? undefined : undefined),
+    [activeCode, tab, uploadedName],
+  );
   const summary = useMemo(() => {
     if (verdicts.length === 0) return null;
     const pass = verdicts.filter((v) => v.status === "PASS").length;
@@ -263,7 +340,10 @@ export function ThreatDetection() {
                 onChange={handleFile}
                 className="hidden"
               />
-              <span className="label-mono">{framework}</span>
+              <span className="label-mono text-acid">
+                {framework}
+                <span className="ml-1.5 text-muted-ink">· {FW_LANG[framework]}</span>
+              </span>
             </div>
           </div>
 
@@ -275,7 +355,10 @@ export function ThreatDetection() {
           ) : (
             <textarea
               value={own}
-              onChange={(e) => setOwn(e.target.value)}
+              onChange={(e) => {
+                setOwn(e.target.value);
+                if (uploadedName) setUploadedName(null);
+              }}
               rows={16}
               placeholder="// Paste Playwright, Cypress, or Selenium code…"
               className="w-full resize-none rounded-md border border-white/10 bg-carbon/60 p-4 font-mono text-[12.5px] leading-[1.7] text-ink outline-none focus:border-acid/50 focus:ring-2 focus:ring-acid/30"
