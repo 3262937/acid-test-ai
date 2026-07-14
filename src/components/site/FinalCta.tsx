@@ -34,7 +34,7 @@ export function Footer() {
           <Link className="hover:text-acid" to="/terms">Terms</Link>
           <Link className="hover:text-acid" to="/security">Security</Link>
           <Link className="hover:text-acid" to="/faq">FAQ</Link>
-          <a className="hover:text-acid" href="mailto:support@acidtest.dev">Status</a>
+          <Link className="hover:text-acid" to="/status">Status</Link>
         </div>
         <span className="label-mono">© 2026 AcidTest AI</span>
       </div>

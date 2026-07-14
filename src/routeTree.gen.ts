@@ -10,6 +10,7 @@
 
 import { Route as rootRouteImport } from './routes/__root'
 import { Route as TermsRouteImport } from './routes/terms'
+import { Route as StatusRouteImport } from './routes/status'
 import { Route as SecurityRouteImport } from './routes/security'
 import { Route as SavedRouteImport } from './routes/saved'
 import { Route as PrivacyRouteImport } from './routes/privacy'
@@ -25,6 +26,11 @@ import { Route as ApiPublicPaymentsWebhookRouteImport } from './routes/api/publi
 const TermsRoute = TermsRouteImport.update({
   id: '/terms',
   path: '/terms',
+  getParentRoute: () => rootRouteImport,
+} as any)
+const StatusRoute = StatusRouteImport.update({
+  id: '/status',
+  path: '/status',
   getParentRoute: () => rootRouteImport,
 } as any)
 const SecurityRoute = SecurityRouteImport.update({
@@ -94,6 +100,7 @@ export interface FileRoutesByFullPath {
   '/privacy': typeof PrivacyRoute
   '/saved': typeof SavedRoute
   '/security': typeof SecurityRoute
+  '/status': typeof StatusRoute
   '/terms': typeof TermsRoute
   '/api/public/payments/webhook': typeof ApiPublicPaymentsWebhookRoute
   '/api/public/v1/tests': typeof ApiPublicV1TestsRoute
@@ -108,6 +115,7 @@ export interface FileRoutesByTo {
   '/privacy': typeof PrivacyRoute
   '/saved': typeof SavedRoute
   '/security': typeof SecurityRoute
+  '/status': typeof StatusRoute
   '/terms': typeof TermsRoute
   '/api/public/payments/webhook': typeof ApiPublicPaymentsWebhookRoute
   '/api/public/v1/tests': typeof ApiPublicV1TestsRoute
@@ -123,6 +131,7 @@ export interface FileRoutesById {
   '/privacy': typeof PrivacyRoute
   '/saved': typeof SavedRoute
   '/security': typeof SecurityRoute
+  '/status': typeof StatusRoute
   '/terms': typeof TermsRoute
   '/api/public/payments/webhook': typeof ApiPublicPaymentsWebhookRoute
   '/api/public/v1/tests': typeof ApiPublicV1TestsRoute
@@ -139,6 +148,7 @@ export interface FileRouteTypes {
     | '/privacy'
     | '/saved'
     | '/security'
+    | '/status'
     | '/terms'
     | '/api/public/payments/webhook'
     | '/api/public/v1/tests'
@@ -153,6 +163,7 @@ export interface FileRouteTypes {
     | '/privacy'
     | '/saved'
     | '/security'
+    | '/status'
     | '/terms'
     | '/api/public/payments/webhook'
     | '/api/public/v1/tests'
@@ -167,6 +178,7 @@ export interface FileRouteTypes {
     | '/privacy'
     | '/saved'
     | '/security'
+    | '/status'
     | '/terms'
     | '/api/public/payments/webhook'
     | '/api/public/v1/tests'
@@ -182,6 +194,7 @@ export interface RootRouteChildren {
   PrivacyRoute: typeof PrivacyRoute
   SavedRoute: typeof SavedRoute
   SecurityRoute: typeof SecurityRoute
+  StatusRoute: typeof StatusRoute
   TermsRoute: typeof TermsRoute
   ApiPublicPaymentsWebhookRoute: typeof ApiPublicPaymentsWebhookRoute
   ApiPublicV1TestsRoute: typeof ApiPublicV1TestsRoute
@@ -194,6 +207,13 @@ declare module '@tanstack/react-router' {
       path: '/terms'
       fullPath: '/terms'
       preLoaderRoute: typeof TermsRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/status': {
+      id: '/status'
+      path: '/status'
+      fullPath: '/status'
+      preLoaderRoute: typeof StatusRouteImport
       parentRoute: typeof rootRouteImport
     }
     '/security': {
@@ -286,6 +306,7 @@ const rootRouteChildren: RootRouteChildren = {
   PrivacyRoute: PrivacyRoute,
   SavedRoute: SavedRoute,
   SecurityRoute: SecurityRoute,
+  StatusRoute: StatusRoute,
   TermsRoute: TermsRoute,
   ApiPublicPaymentsWebhookRoute: ApiPublicPaymentsWebhookRoute,
   ApiPublicV1TestsRoute: ApiPublicV1TestsRoute,
