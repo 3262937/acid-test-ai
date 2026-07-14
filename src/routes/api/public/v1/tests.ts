@@ -9,9 +9,9 @@ async function sha256Hex(input: string): Promise<string> {
 
 type AuthedKey = { id: string; user_id: string };
 
-async function authenticate(request: Request): Promise<
-  { ok: true; key: AuthedKey } | { ok: false; response: Response }
-> {
+async function authenticate(
+  request: Request,
+): Promise<{ ok: true; key: AuthedKey } | { ok: false; response: Response }> {
   const auth = request.headers.get("authorization") ?? "";
   const match = auth.match(/^Bearer\s+(lv_live_[A-Za-z0-9]+)$/);
   if (!match) {
@@ -125,7 +125,6 @@ export const Route = createFileRoute("/api/public/v1/tests")({
           return rateLimitResponse(rl.retryAfter);
         }
 
-
         let body: unknown;
         try {
           body = await request.json();
@@ -140,7 +139,10 @@ export const Route = createFileRoute("/api/public/v1/tests")({
         const code = typeof b?.code === "string" ? b.code : "";
         if (!title || !story || !framework || !code) {
           void meter(auth.key, "POST /v1/tests", 422);
-          return json({ error: "missing_fields", required: ["title", "story", "framework", "code"] }, 422);
+          return json(
+            { error: "missing_fields", required: ["title", "story", "framework", "code"] },
+            422,
+          );
         }
         const { supabaseAdmin } = await import("@/integrations/supabase/client.server");
         const { data, error } = await supabaseAdmin

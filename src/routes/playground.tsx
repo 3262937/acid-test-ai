@@ -3,13 +3,14 @@ import { useEffect, useRef, useState } from "react";
 import { motion } from "framer-motion";
 import { useServerFn } from "@tanstack/react-start";
 import { toast } from "sonner";
-import { Bookmark, Upload, Zap } from "lucide-react";
+import { Bookmark, Upload, Zap, Github } from "lucide-react";
 import { PillNav } from "@/components/site/PillNav";
 import { Footer } from "@/components/site/FinalCta";
 import { CodeTyper } from "@/components/site/CodeTyper";
 import { BuyCreditsDialog } from "@/components/site/BuyCreditsDialog";
 import { generateCode, FRAMEWORK_META, type Framework } from "@/components/site/generators";
 import { FrameworkPicker } from "@/components/site/FrameworkPicker";
+import { GitHubExportDialog } from "@/components/site/GitHubExportDialog";
 import { useSession } from "@/hooks/use-session";
 import { useCredits } from "@/hooks/use-credits";
 import { saveTest } from "@/lib/saved-tests.functions";
@@ -46,6 +47,7 @@ function Playground() {
   const [saving, setSaving] = useState(false);
   const [uploading, setUploading] = useState(false);
   const [buyOpen, setBuyOpen] = useState(false);
+  const [ghOpen, setGhOpen] = useState(false);
   const [savedProviders, setSavedProviders] = useState<Provider[]>([]);
   const fileRef = useRef<HTMLInputElement>(null);
 
@@ -201,7 +203,8 @@ function Playground() {
             </h1>
             {user ? (
               <p className="mt-3 text-sm text-muted-ink">
-                Credits: <span className="font-mono text-acid">{balance ?? "—"}</span> · 1 per generation.{" "}
+                Credits: <span className="font-mono text-acid">{balance ?? "—"}</span> · 1 per
+                generation.{" "}
                 <button onClick={() => setBuyOpen(true)} className="text-acid hover:underline">
                   Buy more →
                 </button>
@@ -316,6 +319,20 @@ function Playground() {
               <Bookmark size={12} />
               {saving ? "Saving…" : "Save this test"}
             </button>
+            <button
+              onClick={() => {
+                if (!user) {
+                  toast.error("Sign in to export to GitHub");
+                  return;
+                }
+                setGhOpen(true);
+              }}
+              className="inline-flex w-full items-center justify-center gap-1.5 rounded-md border border-white/10 bg-white/[0.03] px-5 py-3 font-mono text-[11px] font-bold uppercase tracking-widest text-ink transition-all hover:border-acid/40 hover:text-acid disabled:opacity-50"
+              title={user ? "Push to GitHub" : "Sign in to export"}
+            >
+              <Github size={12} />
+              Push to GitHub
+            </button>
           </div>
 
           <div className="space-y-4">
@@ -331,7 +348,9 @@ function Playground() {
                       className="folder-tab p-4 pt-6"
                     >
                       <div className="mb-2 flex items-center justify-between">
-                        <span className="label-mono">{c.id} · {c.prio}</span>
+                        <span className="label-mono">
+                          {c.id} · {c.prio}
+                        </span>
                         <span className="rounded bg-acid px-2 py-0.5 font-mono text-[10px] font-bold text-[#0a0a0a]">
                           PASS
                         </span>
@@ -350,7 +369,8 @@ function Playground() {
               <div className="folder-tab flex h-[520px] flex-col items-center justify-center gap-3 p-8 text-center">
                 <div className="label-mono text-acid">§ Awaiting input</div>
                 <p className="max-w-md text-sm text-muted-ink">
-                  Hit <span className="font-mono text-ink">Generate suite</span> to synthesize test cases and runnable {fw} code from your story.
+                  Hit <span className="font-mono text-ink">Generate suite</span> to synthesize test
+                  cases and runnable {fw} code from your story.
                 </p>
                 <p className="font-mono text-[11px] text-muted-ink">
                   {engine === "lovable"
@@ -365,6 +385,14 @@ function Playground() {
         </div>
       </section>
       <BuyCreditsDialog open={buyOpen} onClose={() => setBuyOpen(false)} onSuccess={refresh} />
+      <GitHubExportDialog
+        open={ghOpen}
+        onClose={() => setGhOpen(false)}
+        title={story.trim().slice(0, 80) || `${fw} test`}
+        framework={fw}
+        code={generatedCode || generateCode(fw, story)}
+        filename={`generated.${FRAMEWORK_META[fw].ext}`}
+      />
       <Footer />
     </main>
   );

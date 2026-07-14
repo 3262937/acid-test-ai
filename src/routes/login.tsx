@@ -13,7 +13,8 @@ export const Route = createFileRoute("/login")({
       { title: "Sign in — AcidTest" },
       {
         name: "description",
-        content: "Sign in to AcidTest with Google, GitHub or email to synthesize your first test suite.",
+        content:
+          "Sign in to AcidTest with Google, GitHub or email to synthesize your first test suite.",
       },
       { property: "og:title", content: "Sign in — AcidTest" },
       {
@@ -27,10 +28,22 @@ export const Route = createFileRoute("/login")({
 function GoogleGlyph() {
   return (
     <svg width="16" height="16" viewBox="0 0 48 48" aria-hidden>
-      <path fill="#EA4335" d="M24 9.5c3.5 0 6.6 1.2 9 3.5l6.7-6.7C35.6 2.4 30.2 0 24 0 14.6 0 6.4 5.4 2.5 13.3l7.8 6C12.2 13.6 17.6 9.5 24 9.5z" />
-      <path fill="#4285F4" d="M46.5 24.5c0-1.6-.1-3.1-.4-4.5H24v9h12.7c-.5 3-2.2 5.5-4.7 7.2l7.5 5.8c4.4-4.1 7-10.1 7-17.5z" />
-      <path fill="#FBBC05" d="M10.3 28.7c-.5-1.5-.8-3.1-.8-4.7s.3-3.2.8-4.7l-7.8-6C.9 16.3 0 20.1 0 24s.9 7.7 2.5 10.7l7.8-6z" />
-      <path fill="#34A853" d="M24 48c6.2 0 11.5-2 15.4-5.5l-7.5-5.8c-2.1 1.4-4.8 2.3-7.9 2.3-6.4 0-11.8-4.1-13.7-9.8l-7.8 6C6.4 42.6 14.6 48 24 48z" />
+      <path
+        fill="#EA4335"
+        d="M24 9.5c3.5 0 6.6 1.2 9 3.5l6.7-6.7C35.6 2.4 30.2 0 24 0 14.6 0 6.4 5.4 2.5 13.3l7.8 6C12.2 13.6 17.6 9.5 24 9.5z"
+      />
+      <path
+        fill="#4285F4"
+        d="M46.5 24.5c0-1.6-.1-3.1-.4-4.5H24v9h12.7c-.5 3-2.2 5.5-4.7 7.2l7.5 5.8c4.4-4.1 7-10.1 7-17.5z"
+      />
+      <path
+        fill="#FBBC05"
+        d="M10.3 28.7c-.5-1.5-.8-3.1-.8-4.7s.3-3.2.8-4.7l-7.8-6C.9 16.3 0 20.1 0 24s.9 7.7 2.5 10.7l7.8-6z"
+      />
+      <path
+        fill="#34A853"
+        d="M24 48c6.2 0 11.5-2 15.4-5.5l-7.5-5.8c-2.1 1.4-4.8 2.3-7.9 2.3-6.4 0-11.8-4.1-13.7-9.8l-7.8 6C6.4 42.6 14.6 48 24 48z"
+      />
     </svg>
   );
 }
@@ -134,8 +147,11 @@ function LoginPage() {
 
           <div className="mt-6 rounded-md border border-amber-400/20 bg-amber-400/[0.06] px-3 py-2.5">
             <p className="font-mono text-[12px] leading-relaxed text-amber-200/90">
-              <span className="font-semibold text-amber-200">GitHub sign-in is temporarily unavailable.</span>{" "}
-              It will be re-enabled after migrating this project from Lovable Cloud to a self-managed Supabase instance. Google sign-in works normally.
+              <span className="font-semibold text-amber-200">
+                GitHub sign-in is temporarily unavailable.
+              </span>{" "}
+              It will be re-enabled after migrating this project from Lovable Cloud to a
+              self-managed Supabase instance. Google sign-in works normally.
             </p>
           </div>
 

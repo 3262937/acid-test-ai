@@ -42,10 +42,7 @@ export const Route = createFileRoute("/account")({
 function initialsOf(name: string | null | undefined, email: string | null | undefined) {
   const source = (name?.trim() || email?.split("@")[0] || "AC").trim();
   const parts = source.split(/\s+/).filter(Boolean);
-  const chars =
-    parts.length >= 2
-      ? parts[0][0] + parts[1][0]
-      : source.slice(0, 2);
+  const chars = parts.length >= 2 ? parts[0][0] + parts[1][0] : source.slice(0, 2);
   return chars.toUpperCase();
 }
 
@@ -240,7 +237,9 @@ function CreditsPanel() {
           <Zap size={16} className="text-acid" />
           <div>
             <div className="label-mono text-acid">§ Credits</div>
-            <h2 className="font-display text-2xl font-bold tracking-[-0.02em]">Balance & top-ups</h2>
+            <h2 className="font-display text-2xl font-bold tracking-[-0.02em]">
+              Balance & top-ups
+            </h2>
           </div>
         </div>
         <button
@@ -474,7 +473,7 @@ function ApiKeysPanel() {
           Using your API key
         </summary>
         <pre className="mt-3 overflow-x-auto rounded bg-black/40 p-3 font-mono text-[11px] text-ink">
-{`# List your saved tests
+          {`# List your saved tests
 curl \\
   -H "Authorization: Bearer lv_live_..." \\
   ${typeof window !== "undefined" ? window.location.origin : "https://your-app"}/api/public/v1/tests
@@ -560,7 +559,8 @@ function ByoKeysPanel() {
             OpenAI &amp; Claude keys
           </h2>
           <p className="mt-1 font-mono text-[11px] text-muted-ink">
-            Encrypted at rest. When enabled on the Playground, generation runs on your key and skips credit charges.
+            Encrypted at rest. When enabled on the Playground, generation runs on your key and skips
+            credit charges.
           </p>
         </div>
       </div>
@@ -576,9 +576,7 @@ function ByoKeysPanel() {
             <div className="mb-2 flex items-center justify-between">
               <div className="label-mono text-acid">{label}</div>
               {cur ? (
-                <span className="font-mono text-[11px] text-muted-ink">
-                  saved · ···{cur.last4}
-                </span>
+                <span className="font-mono text-[11px] text-muted-ink">saved · ···{cur.last4}</span>
               ) : (
                 <span className="font-mono text-[11px] text-muted-ink">not set</span>
               )}

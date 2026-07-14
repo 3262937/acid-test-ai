@@ -1,6 +1,12 @@
 const FRAMEWORKS = [
-  "Playwright", "Cypress", "Selenium", "Jest",
-  "Vitest", "Mocha", "Puppeteer", "Appium",
+  "Playwright",
+  "Cypress",
+  "Selenium",
+  "Jest",
+  "Vitest",
+  "Mocha",
+  "Puppeteer",
+  "Appium",
 ];
 
 export function Marquee() {

@@ -30,11 +30,21 @@ export function Footer() {
       <div className="mx-auto flex max-w-[1200px] flex-col items-center justify-between gap-6 px-6 py-10 md:flex-row">
         <Logo size="lg" />
         <div className="flex flex-wrap justify-center gap-6 label-mono">
-          <Link className="hover:text-acid" to="/privacy">Privacy</Link>
-          <Link className="hover:text-acid" to="/terms">Terms</Link>
-          <Link className="hover:text-acid" to="/security">Security</Link>
-          <Link className="hover:text-acid" to="/faq">FAQ</Link>
-          <Link className="hover:text-acid" to="/status">Status</Link>
+          <Link className="hover:text-acid" to="/privacy">
+            Privacy
+          </Link>
+          <Link className="hover:text-acid" to="/terms">
+            Terms
+          </Link>
+          <Link className="hover:text-acid" to="/security">
+            Security
+          </Link>
+          <Link className="hover:text-acid" to="/faq">
+            FAQ
+          </Link>
+          <Link className="hover:text-acid" to="/status">
+            Status
+          </Link>
         </div>
         <span className="label-mono">© 2026 AcidTest AI</span>
       </div>

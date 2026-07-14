@@ -104,9 +104,7 @@ export function Pricing() {
             )}
             <div className="label-mono text-muted-ink">{t.name}</div>
             <div className="mt-3 flex items-baseline gap-2">
-              <span className="font-display text-5xl font-bold tracking-[-0.02em]">
-                ${t.price}
-              </span>
+              <span className="font-display text-5xl font-bold tracking-[-0.02em]">${t.price}</span>
               <span className="label-mono">/ month</span>
             </div>
             <div className="mt-1 font-mono text-[12px] text-acid">

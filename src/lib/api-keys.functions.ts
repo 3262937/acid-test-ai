@@ -115,9 +115,21 @@ export const getUsageSummary = createServerFn({ method: "GET" })
     const d30 = new Date(now - 30 * 24 * 3600 * 1000).toISOString();
 
     const [{ count: c1 }, { count: c7 }, { count: c30 }, { data: recent }] = await Promise.all([
-      supabase.from("api_usage").select("id", { count: "exact", head: true }).eq("user_id", userId).gte("created_at", d1),
-      supabase.from("api_usage").select("id", { count: "exact", head: true }).eq("user_id", userId).gte("created_at", d7),
-      supabase.from("api_usage").select("id", { count: "exact", head: true }).eq("user_id", userId).gte("created_at", d30),
+      supabase
+        .from("api_usage")
+        .select("id", { count: "exact", head: true })
+        .eq("user_id", userId)
+        .gte("created_at", d1),
+      supabase
+        .from("api_usage")
+        .select("id", { count: "exact", head: true })
+        .eq("user_id", userId)
+        .gte("created_at", d7),
+      supabase
+        .from("api_usage")
+        .select("id", { count: "exact", head: true })
+        .eq("user_id", userId)
+        .gte("created_at", d30),
       supabase.from("api_usage").select("api_key_id").eq("user_id", userId).gte("created_at", d30),
     ]);
 
@@ -125,7 +137,10 @@ export const getUsageSummary = createServerFn({ method: "GET" })
     for (const r of (recent ?? []) as { api_key_id: string }[]) {
       perKeyMap.set(r.api_key_id, (perKeyMap.get(r.api_key_id) ?? 0) + 1);
     }
-    const perKey = Array.from(perKeyMap.entries()).map(([api_key_id, count]) => ({ api_key_id, count }));
+    const perKey = Array.from(perKeyMap.entries()).map(([api_key_id, count]) => ({
+      api_key_id,
+      count,
+    }));
 
     return { last24h: c1 ?? 0, last7d: c7 ?? 0, last30d: c30 ?? 0, perKey };
   });

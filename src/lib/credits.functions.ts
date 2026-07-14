@@ -1,10 +1,6 @@
 import { createServerFn } from "@tanstack/react-start";
 import { requireSupabaseAuth } from "@/integrations/supabase/auth-middleware";
-import {
-  type StripeEnv,
-  createStripeClient,
-  getStripeErrorMessage,
-} from "@/lib/stripe.server";
+import { type StripeEnv, createStripeClient, getStripeErrorMessage } from "@/lib/stripe.server";
 
 type Balance = { balance: number };
 
@@ -12,15 +8,20 @@ export const getCreditBalance = createServerFn({ method: "GET" })
   .middleware([requireSupabaseAuth])
   .handler(async ({ context }): Promise<Balance> => {
     const { supabase, userId } = context;
-    const { data } = await (supabase as unknown as {
-      from: (t: string) => {
-        select: (c: string) => {
-          eq: (col: string, v: string) => {
-            maybeSingle: () => Promise<{ data: { balance: number } | null }>;
+    const { data } = await (
+      supabase as unknown as {
+        from: (t: string) => {
+          select: (c: string) => {
+            eq: (
+              col: string,
+              v: string,
+            ) => {
+              maybeSingle: () => Promise<{ data: { balance: number } | null }>;
+            };
           };
         };
-      };
-    })
+      }
+    )
       .from("credits")
       .select("balance")
       .eq("user_id", userId)
@@ -32,10 +33,12 @@ export const spendCredit = createServerFn({ method: "POST" })
   .middleware([requireSupabaseAuth])
   .handler(async ({ context }): Promise<{ balance: number } | { error: "insufficient" }> => {
     const { supabase } = context;
-    const { data, error } = await (supabase.rpc as unknown as (
-      fn: string,
-      args: Record<string, unknown>,
-    ) => Promise<{ data: number | null; error: { message: string } | null }>)("consume_credit", { _amount: 1 });
+    const { data, error } = await (
+      supabase.rpc as unknown as (
+        fn: string,
+        args: Record<string, unknown>,
+      ) => Promise<{ data: number | null; error: { message: string } | null }>
+    )("consume_credit", { _amount: 1 });
     if (error) throw new Error(error.message);
     const newBalance = data as number;
     if (newBalance === -1) return { error: "insufficient" };
@@ -46,14 +49,12 @@ type CheckoutResult = { clientSecret: string } | { error: string };
 
 export const createCreditsCheckout = createServerFn({ method: "POST" })
   .middleware([requireSupabaseAuth])
-  .inputValidator(
-    (data: { priceId: string; returnUrl: string; environment: StripeEnv }) => {
-      if (!/^credits_(50|200|1000)$/.test(data.priceId)) {
-        throw new Error("Invalid priceId");
-      }
-      return data;
-    },
-  )
+  .inputValidator((data: { priceId: string; returnUrl: string; environment: StripeEnv }) => {
+    if (!/^credits_(50|200|1000)$/.test(data.priceId)) {
+      throw new Error("Invalid priceId");
+    }
+    return data;
+  })
   .handler(async ({ data, context }): Promise<CheckoutResult> => {
     try {
       const stripe = createStripeClient(data.environment);
@@ -92,9 +93,7 @@ export const createCreditsCheckout = createServerFn({ method: "POST" })
       }
 
       const productId =
-        typeof stripePrice.product === "string"
-          ? stripePrice.product
-          : stripePrice.product.id;
+        typeof stripePrice.product === "string" ? stripePrice.product : stripePrice.product.id;
       const product = await stripe.products.retrieve(productId);
 
       const creditsMap: Record<string, number> = {
