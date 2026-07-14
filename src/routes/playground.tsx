@@ -118,7 +118,17 @@ function Playground() {
             >
               ▶ Generate suite
             </button>
+            <button
+              onClick={handleSave}
+              disabled={saving}
+              className="inline-flex w-full items-center justify-center gap-1.5 rounded-md border border-white/10 bg-white/[0.03] px-5 py-3 font-mono text-[11px] font-bold uppercase tracking-widest text-ink transition-all hover:border-acid/40 hover:text-acid disabled:opacity-50"
+              title={user ? "Save this test" : "Sign in to save"}
+            >
+              <Bookmark size={12} />
+              {saving ? "Saving…" : "Save this test"}
+            </button>
           </div>
+
 
           <div className="space-y-4">
             <div className="grid grid-cols-1 gap-3 md:grid-cols-3">
