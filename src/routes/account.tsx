@@ -561,21 +561,33 @@ function ByoKeysPanel() {
         <div>
           <div className="label-mono text-acid">§ Bring your own AI</div>
           <h2 className="font-display text-2xl font-bold tracking-[-0.02em]">
-            OpenAI &amp; Claude keys
+            OpenAI, Claude &amp; NVIDIA NIM keys
           </h2>
           <p className="mt-1 font-mono text-[11px] text-muted-ink">
             Encrypted at rest. When enabled on the Playground, generation runs on your key and skips
-            credit charges.
+            credit charges. NVIDIA NIM offers a generous free tier — grab a key at{" "}
+            <a
+              href="https://build.nvidia.com"
+              target="_blank"
+              rel="noreferrer"
+              className="text-acid hover:underline"
+            >
+              build.nvidia.com
+            </a>
+            .
           </p>
         </div>
       </div>
 
-      {(["openai", "anthropic"] as Provider[]).map((p) => {
+      {(["openai", "anthropic", "nvidia"] as Provider[]).map((p) => {
         const cur = status(p);
-        const label = p === "openai" ? "OpenAI" : "Anthropic (Claude)";
-        const placeholder = p === "openai" ? "sk-..." : "sk-ant-...";
-        const value = p === "openai" ? openai : anthropic;
-        const setValue = p === "openai" ? setOpenai : setAnthropic;
+        const label =
+          p === "openai" ? "OpenAI" : p === "anthropic" ? "Anthropic (Claude)" : "NVIDIA NIM (free)";
+        const placeholder =
+          p === "openai" ? "sk-..." : p === "anthropic" ? "sk-ant-..." : "nvapi-...";
+        const value = p === "openai" ? openai : p === "anthropic" ? anthropic : nvidia;
+        const setValue =
+          p === "openai" ? setOpenai : p === "anthropic" ? setAnthropic : setNvidia;
         return (
           <div key={p} className="mb-5 rounded-md border border-white/10 bg-white/[0.02] p-4">
             <div className="mb-2 flex items-center justify-between">
