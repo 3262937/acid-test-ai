@@ -245,10 +245,26 @@ export function ThreatDetection() {
                 Paste your own
               </button>
             </div>
-            <span className="label-mono">{framework}</span>
-          </div>
-
-          {tab === "generated" ? (
+            <div className="flex items-center gap-2">
+              <button
+                type="button"
+                onClick={() => fileRef.current?.click()}
+                disabled={uploading}
+                className="inline-flex items-center gap-1 rounded-md border border-white/10 bg-white/[0.03] px-2 py-1 font-mono text-[10px] uppercase tracking-widest text-muted-ink transition-all hover:border-acid/40 hover:text-acid disabled:opacity-50"
+                title="Upload a test file (.js, .ts, .py, .java, .cs, .robot, .feature…)"
+              >
+                <Upload size={11} />
+                {uploading ? "Reading…" : "Upload"}
+              </button>
+              <input
+                ref={fileRef}
+                type="file"
+                accept=".js,.jsx,.ts,.tsx,.py,.java,.cs,.kt,.swift,.robot,.feature,.json,.xml,.txt"
+                onChange={handleFile}
+                className="hidden"
+              />
+              <span className="label-mono">{framework}</span>
+            </div>
             <pre className="max-h-[420px] overflow-auto rounded-md border border-white/5 bg-carbon/60 p-4 font-mono text-[12.5px] leading-[1.7] text-ink/85">
               <code>{DEFAULT_GENERATED}</code>
             </pre>
