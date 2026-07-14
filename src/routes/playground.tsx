@@ -320,7 +320,7 @@ function Playground() {
                 ? "Generating…"
                 : engine === "lovable"
                   ? "Generate suite (1 credit)"
-                  : `Generate with ${engine === "openai" ? "OpenAI" : "Claude"}`}
+                  : `Generate with ${engine === "openai" ? "OpenAI" : engine === "anthropic" ? "Claude" : "NVIDIA NIM"}`}
             </button>
             <button
               onClick={handleSave}
