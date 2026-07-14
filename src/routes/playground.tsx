@@ -8,15 +8,14 @@ import { PillNav } from "@/components/site/PillNav";
 import { Footer } from "@/components/site/FinalCta";
 import { CodeTyper } from "@/components/site/CodeTyper";
 import { BuyCreditsDialog } from "@/components/site/BuyCreditsDialog";
-import { generateCode, type Framework } from "@/components/site/generators";
+import { generateCode, FRAMEWORK_META, type Framework } from "@/components/site/generators";
+import { FrameworkPicker } from "@/components/site/FrameworkPicker";
 import { useSession } from "@/hooks/use-session";
 import { useCredits } from "@/hooks/use-credits";
 import { saveTest } from "@/lib/saved-tests.functions";
 import { listUserKeys, type Provider } from "@/lib/user-keys.functions";
 import { generateWithUserKey, parseUploadedFile } from "@/lib/ai-generate.functions";
 
-const ALL: Framework[] = ["Playwright", "Cypress", "Selenium"];
-const EXTRA = ["Jest", "Vitest", "Mocha", "Puppeteer", "Appium"];
 const FREE_TRY_KEY = "acidtest_free_try_used";
 
 type Engine = "lovable" | "openai" | "anthropic";
