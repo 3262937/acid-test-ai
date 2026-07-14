@@ -19,7 +19,7 @@ import { generateWithUserKey, parseUploadedFile } from "@/lib/ai-generate.functi
 
 const FREE_TRY_KEY = "acidtest_free_try_used";
 
-type Engine = "lovable" | "openai" | "anthropic";
+type Engine = "lovable" | "openai" | "anthropic" | "nvidia";
 
 export const Route = createFileRoute("/playground")({
   component: Playground,
