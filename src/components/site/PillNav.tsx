@@ -1,7 +1,8 @@
 import { Link, useNavigate } from "@tanstack/react-router";
 import { useState } from "react";
-import { LogOut, Bookmark } from "lucide-react";
+import { LogOut, Bookmark, User as UserIcon } from "lucide-react";
 import { useSession } from "@/hooks/use-session";
+import { useProfile } from "@/hooks/use-profile";
 import { supabase } from "@/integrations/supabase/client";
 
 const links: { label: string; to: string; hash?: string }[] = [
@@ -12,14 +13,16 @@ const links: { label: string; to: string; hash?: string }[] = [
   { label: "Playground", to: "/playground" },
 ];
 
-function initials(email?: string | null) {
-  if (!email) return "AC";
-  const local = email.split("@")[0] ?? "";
-  return local.slice(0, 2).toUpperCase() || "AC";
+function initialsOf(name?: string | null, email?: string | null) {
+  const source = (name?.trim() || email?.split("@")[0] || "AC").trim();
+  const parts = source.split(/\s+/).filter(Boolean);
+  const chars = parts.length >= 2 ? parts[0][0] + parts[1][0] : source.slice(0, 2);
+  return chars.toUpperCase();
 }
 
 export function PillNav() {
   const { user } = useSession();
+  const { profile } = useProfile();
   const navigate = useNavigate();
   const [open, setOpen] = useState(false);
 
@@ -28,6 +31,10 @@ export function PillNav() {
     await supabase.auth.signOut();
     navigate({ to: "/" });
   }
+
+  const displayName = profile?.display_name || profile?.email || user?.email || "";
+  const initials = initialsOf(profile?.display_name, profile?.email ?? user?.email);
+  const avatarUrl = profile?.avatar_url ?? null;
 
   return (
     <div className="fixed top-6 left-1/2 z-50 w-[min(1200px,calc(100%-32px))] -translate-x-1/2">
@@ -59,20 +66,42 @@ export function PillNav() {
             <div className="relative">
               <button
                 onClick={() => setOpen((o) => !o)}
-                className="flex h-9 w-9 items-center justify-center rounded-full bg-acid font-mono text-[11px] font-bold text-[#0a0a0a] transition-all hover:shadow-[0_0_20px_rgba(197,239,87,0.5)]"
+                className="flex h-9 w-9 items-center justify-center overflow-hidden rounded-full bg-acid font-mono text-[11px] font-bold text-[#0a0a0a] transition-all hover:shadow-[0_0_20px_rgba(197,239,87,0.5)]"
                 aria-label="Account menu"
               >
-                {initials(user.email)}
+                {avatarUrl ? (
+                  <img
+                    src={avatarUrl}
+                    alt=""
+                    className="h-full w-full object-cover"
+                    onError={(e) => {
+                      (e.currentTarget as HTMLImageElement).style.display = "none";
+                    }}
+                  />
+                ) : (
+                  initials
+                )}
               </button>
               {open && (
-                <div className="absolute right-0 mt-2 w-56 rounded-lg border border-white/10 bg-[rgba(16,17,18,0.95)] p-2 backdrop-blur-xl">
+                <div className="absolute right-0 mt-2 w-60 rounded-lg border border-white/10 bg-[rgba(16,17,18,0.95)] p-2 backdrop-blur-xl">
                   <div className="border-b border-white/5 px-3 py-2 font-mono text-[11px] text-muted-ink">
-                    {user.email}
+                    <div className="truncate text-ink">{displayName}</div>
+                    {profile?.email && profile.email !== displayName && (
+                      <div className="truncate">{profile.email}</div>
+                    )}
                   </div>
+                  <Link
+                    to="/account"
+                    onClick={() => setOpen(false)}
+                    className="mt-1 flex w-full items-center gap-2 rounded px-3 py-2 font-mono text-[11px] uppercase tracking-widest text-ink transition-colors hover:bg-white/5 hover:text-acid"
+                  >
+                    <UserIcon size={12} />
+                    Account
+                  </Link>
                   <Link
                     to="/saved"
                     onClick={() => setOpen(false)}
-                    className="mt-1 flex w-full items-center gap-2 rounded px-3 py-2 font-mono text-[11px] uppercase tracking-widest text-ink transition-colors hover:bg-white/5 hover:text-acid"
+                    className="flex w-full items-center gap-2 rounded px-3 py-2 font-mono text-[11px] uppercase tracking-widest text-ink transition-colors hover:bg-white/5 hover:text-acid"
                   >
                     <Bookmark size={12} />
                     Saved tests
