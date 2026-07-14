@@ -19,6 +19,13 @@ import {
   listApiKeys,
   revokeApiKey,
 } from "@/lib/api-keys.functions";
+import {
+  type Provider,
+  type UserKeyStatus,
+  deleteUserKey,
+  listUserKeys,
+  saveUserKey,
+} from "@/lib/user-keys.functions";
 import { supabase } from "@/integrations/supabase/client";
 
 export const Route = createFileRoute("/account")({
@@ -193,6 +200,7 @@ function AccountPage() {
         </div>
 
         <CreditsPanel />
+        <ByoKeysPanel />
         <ApiKeysPanel />
       </section>
       <Footer />
@@ -488,6 +496,121 @@ function UsageCard({ label, value }: { label: string; value: number }) {
     <div className="rounded-md border border-white/10 bg-white/[0.02] p-4">
       <div className="label-mono text-muted-ink">{label}</div>
       <div className="mt-1 font-display text-2xl font-bold text-ink">{value.toLocaleString()}</div>
+    </div>
+  );
+}
+
+function ByoKeysPanel() {
+  const list = useServerFn(listUserKeys);
+  const save = useServerFn(saveUserKey);
+  const del = useServerFn(deleteUserKey);
+  const [keys, setKeys] = useState<UserKeyStatus[]>([]);
+  const [openai, setOpenai] = useState("");
+  const [anthropic, setAnthropic] = useState("");
+  const [busy, setBusy] = useState<Provider | null>(null);
+
+  const refresh = useCallback(async () => {
+    try {
+      setKeys(await list());
+    } catch (err) {
+      toast.error("Failed to load keys", { description: (err as Error).message });
+    }
+  }, [list]);
+
+  useEffect(() => {
+    void refresh();
+  }, [refresh]);
+
+  async function handleSave(provider: Provider, value: string) {
+    if (!value.trim()) return;
+    setBusy(provider);
+    try {
+      await save({ data: { provider, apiKey: value.trim() } });
+      toast.success(`${provider === "openai" ? "OpenAI" : "Claude"} key saved`);
+      if (provider === "openai") setOpenai("");
+      else setAnthropic("");
+      await refresh();
+    } catch (err) {
+      toast.error("Save failed", { description: (err as Error).message });
+    } finally {
+      setBusy(null);
+    }
+  }
+
+  async function handleDelete(provider: Provider) {
+    if (!confirm(`Remove your ${provider === "openai" ? "OpenAI" : "Claude"} key?`)) return;
+    try {
+      await del({ data: { provider } });
+      toast.success("Removed");
+      await refresh();
+    } catch (err) {
+      toast.error("Delete failed", { description: (err as Error).message });
+    }
+  }
+
+  const status = (p: Provider) => keys.find((k) => k.provider === p);
+
+  return (
+    <div className="mt-10 folder-tab p-8 pt-10">
+      <div className="mb-6 flex items-center gap-3">
+        <KeyRound size={16} className="text-acid" />
+        <div>
+          <div className="label-mono text-acid">§ Bring your own AI</div>
+          <h2 className="font-display text-2xl font-bold tracking-[-0.02em]">
+            OpenAI &amp; Claude keys
+          </h2>
+          <p className="mt-1 font-mono text-[11px] text-muted-ink">
+            Encrypted at rest. When enabled on the Playground, generation runs on your key and skips credit charges.
+          </p>
+        </div>
+      </div>
+
+      {(["openai", "anthropic"] as Provider[]).map((p) => {
+        const cur = status(p);
+        const label = p === "openai" ? "OpenAI" : "Anthropic (Claude)";
+        const placeholder = p === "openai" ? "sk-..." : "sk-ant-...";
+        const value = p === "openai" ? openai : anthropic;
+        const setValue = p === "openai" ? setOpenai : setAnthropic;
+        return (
+          <div key={p} className="mb-5 rounded-md border border-white/10 bg-white/[0.02] p-4">
+            <div className="mb-2 flex items-center justify-between">
+              <div className="label-mono text-acid">{label}</div>
+              {cur ? (
+                <span className="font-mono text-[11px] text-muted-ink">
+                  saved · ···{cur.last4}
+                </span>
+              ) : (
+                <span className="font-mono text-[11px] text-muted-ink">not set</span>
+              )}
+            </div>
+            <div className="flex flex-wrap gap-2">
+              <input
+                type="password"
+                value={value}
+                onChange={(e) => setValue(e.target.value)}
+                placeholder={placeholder}
+                autoComplete="off"
+                className="flex-1 min-w-[240px] rounded-md border border-white/10 bg-carbon/60 p-3 font-mono text-[12px] text-ink outline-none focus:border-acid/50"
+              />
+              <button
+                onClick={() => handleSave(p, value)}
+                disabled={busy === p || !value.trim()}
+                className="inline-flex items-center gap-1 rounded-md bg-acid px-4 py-2.5 font-mono text-[11px] font-bold uppercase tracking-widest text-[#0a0a0a] hover:shadow-[0_0_28px_-4px_rgba(197,239,87,0.7)] disabled:opacity-50"
+              >
+                <Save size={12} /> {busy === p ? "Saving…" : cur ? "Replace" : "Save"}
+              </button>
+              {cur && (
+                <button
+                  onClick={() => handleDelete(p)}
+                  className="inline-flex items-center gap-1 rounded-md border border-white/10 px-3 py-2.5 font-mono text-[11px] uppercase tracking-widest text-muted-ink hover:border-red-400/40 hover:text-red-300"
+                >
+                  <Trash2 size={11} /> Remove
+                </button>
+              )}
+            </div>
+          </div>
+        );
+      })}
     </div>
   );
 }
