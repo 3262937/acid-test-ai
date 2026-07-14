@@ -153,13 +153,33 @@ export function LiveDemo() {
 
         <div className="grid grid-cols-1 gap-6 lg:grid-cols-2">
           <div className="folder-tab p-6 pt-8">
-            <label className="label-mono mb-3 block text-acid">User Story · Input</label>
+            <div className="mb-3 flex items-center justify-between">
+              <label className="label-mono block text-acid">User Story · Input</label>
+              <button
+                type="button"
+                onClick={() => fileRef.current?.click()}
+                disabled={uploading}
+                className="inline-flex items-center gap-1 rounded-md border border-white/10 bg-white/[0.03] px-2 py-1 font-mono text-[10px] uppercase tracking-widest text-muted-ink transition-all hover:border-acid/40 hover:text-acid disabled:opacity-50"
+                title="Upload .docx / .xlsx / .csv / .txt"
+              >
+                <Upload size={11} />
+                {uploading ? "Parsing…" : "Upload doc"}
+              </button>
+              <input
+                ref={fileRef}
+                type="file"
+                accept=".txt,.md,.docx,.xlsx,.xls,.csv"
+                onChange={handleFile}
+                className="hidden"
+              />
+            </div>
             <textarea
               value={story}
               onChange={(e) => setStory(e.target.value)}
               rows={7}
               className="w-full resize-none rounded-md border border-white/10 bg-carbon/60 p-4 font-mono text-[13px] leading-relaxed text-ink outline-none focus:border-acid/50 focus:ring-2 focus:ring-acid/30"
             />
+
             <div className="mt-4 flex items-center justify-between">
               <div className="label-mono">{story.trim().split(/\s+/).length} tokens</div>
               <button
