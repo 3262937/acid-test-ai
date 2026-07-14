@@ -239,20 +239,38 @@ Deno.serve(async (req) => {
   if (req.method === "OPTIONS") return new Response("ok", { headers: corsHeaders });
 
   try {
+    const body = await req.json().catch(() => ({}));
+    const reset = body?.reset === true;
+    const start = typeof body?.start === "number" ? body.start : 0;
+    const end = typeof body?.end === "number" ? body.end : DOCS.length;
+
     const supabase = createClient(
       Deno.env.get("SUPABASE_URL")!,
       Deno.env.get("SUPABASE_SERVICE_ROLE_KEY")!,
     );
 
-    const rows: {
-      content: string;
-      source: string;
-      metadata: Record<string, unknown>;
-      embedding: number[];
-    }[] = [];
+    if (reset) {
+      const { error: delErr } = await supabase
+        .from("kb_documents")
+        .delete()
+        .not("id", "is", null);
+      if (delErr) throw delErr;
+      return new Response(JSON.stringify({ reset: true }), {
+        status: 200,
+        headers: { "Content-Type": "application/json", ...corsHeaders },
+      });
+    }
 
-    for (const doc of DOCS) {
+    let inserted = 0;
+    for (let d = start; d < Math.min(end, DOCS.length); d++) {
+      const doc = DOCS[d];
       const chunks = chunkText(doc.content, 500, 50);
+      const rows: {
+        content: string;
+        source: string;
+        metadata: Record<string, unknown>;
+        embedding: number[];
+      }[] = [];
       for (const chunk of chunks) {
         const embedding = await session.run(chunk, { mean_pool: true, normalize: true });
         rows.push({
@@ -262,23 +280,12 @@ Deno.serve(async (req) => {
           embedding,
         });
       }
-    }
-
-    const { error: delErr } = await supabase
-      .from("kb_documents")
-      .delete()
-      .not("id", "is", null);
-    if (delErr) throw delErr;
-
-    // batch insert
-    const batchSize = 50;
-    for (let i = 0; i < rows.length; i += batchSize) {
-      const batch = rows.slice(i, i + batchSize);
-      const { error } = await supabase.from("kb_documents").insert(batch);
+      const { error } = await supabase.from("kb_documents").insert(rows);
       if (error) throw error;
+      inserted += rows.length;
     }
 
-    return new Response(JSON.stringify({ inserted: rows.length }), {
+    return new Response(JSON.stringify({ inserted, processed: [start, Math.min(end, DOCS.length)] }), {
       status: 200,
       headers: { "Content-Type": "application/json", ...corsHeaders },
     });
