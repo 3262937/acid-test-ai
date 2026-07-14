@@ -1,82 +1,90 @@
-# Plan — Threat Detection, auth wiring, Login page
+
+# Credits + Stripe Checkout
+
+First feature in the roadmap. Users buy credit packs / subscribe on the Pricing page, Stripe handles the payment, a webhook credits their account, and the app shows their balance and deducts credits when they generate a test suite.
 
 ## Scope
-Add one new landing-page section ("Threat Detection"), a dedicated `/login` route with Google + GitHub buttons, and wire the "Start Free" CTAs to it. Enable Lovable Cloud, add a `profiles` table with an auto-create trigger, and register a lightweight auth listener. Every existing section (Hero, Marquee, Hunt, Protocol, LiveDemo, FinalCta, Footer, Docs, Playground) stays untouched.
 
-## 1. Threat Detection section (client-side mock)
+- Turn on Lovable's built-in Stripe payments (no keys needed from you).
+- Add a `credits` ledger backed by Supabase (balance + every debit/credit as a row).
+- Wire the existing Pricing section buttons to real Stripe checkout sessions.
+- Show current balance in the top nav after login.
+- Deduct 1 credit per test-suite generation in Playground / LiveDemo.
+- Success page (`/success`) already exists — repurpose as the post-checkout landing.
 
-New component `src/components/site/ThreatDetection.tsx`, inserted on `/` **between LiveDemo and FinalCta** (keeps existing rhythm).
+## User flow
 
-Layout: split panel inside a `folder-tab`.
-- **Left — Test source picker**: two tabs
-  - "Generated suite" — auto-loads the latest generated code from LiveDemo (via a tiny module-level cache in `generators.ts`, no state coupling), read-only preview.
-  - "Paste your own" — editable textarea (font-mono, JetBrains) for user-supplied Playwright/Cypress/Selenium code, framework detected by a simple keyword sniff (`test(` / `describe(` / `cy.` / `By.`).
-- **Right — Threat console**:
-  - Acid "▶ Run threat scan" button (disabled while running).
-  - Terminal-styled log area that streams synthesized lines with staggered `setTimeout` (60fps): `[00:00] loading harness…` → `[00:01] resolving 3 scenarios…` → per-scenario `PASS`/`FAIL` chips.
-  - Summary bar at bottom: `3 scanned · 2 PASS · 1 FAIL · 480ms` with acid glow.
-  - Deterministic mock: hash the input string → seeded RNG → stable pass/fail pattern (so the same code always yields the same verdict; feels real).
-- Section id `#threat`, `§ 04 — Threat Detection` label, section spacing matches existing rhythm.
-- `prefers-reduced-motion`: skip the stream, render final state.
-- No backend, no persistence.
+```text
+Pricing page → click "Buy" → Stripe Checkout (hosted) → pay
+        ↓
+   Stripe webhook → server route → insert credit_ledger row (+N)
+        ↓
+   /success page → shows "N credits added" + new balance
+        ↓
+   Playground "Generate" → server fn debits 1 credit → returns suite
+```
 
-Add to `/docs` a short "Threat Detection" note under the frameworks section linking to `/#threat`.
+## Database (one migration)
 
-## 2. Login page + auth
+Three tables in `public`:
 
-### Cloud + schema
-- Enable Lovable Cloud (`supabase--enable`).
-- Enable Google via `supabase--configure_social_auth` in the same turn.
-- Migration:
-  - `create table public.profiles (id uuid pk references auth.users on delete cascade, email text, display_name text, avatar_url text, created_at timestamptz default now())`
-  - `GRANT SELECT, INSERT, UPDATE ON public.profiles TO authenticated; GRANT ALL ... TO service_role;`
-  - RLS enabled + policies: `select/update using auth.uid() = id`.
-  - Trigger `handle_new_user()` (SECURITY DEFINER) on `auth.users` insert → inserts a profile row with email/display_name/avatar from `raw_user_meta_data`.
+- **credit_packages** — catalog of what's for sale (name, stripe_price_id, credits, price_cents, kind: `one_time` | `subscription`, tier). Seeded with the 6 SKUs from the Pricing UI (3 tiers + 3 top-ups). Public SELECT.
+- **credit_ledger** — append-only. Every purchase, monthly subscription grant, and generation debit is one row (user_id, delta, reason, stripe_event_id unique, metadata, created_at). RLS: user reads own rows; writes only via service role.
+- **user_credits** — cached balance per user (user_id PK, balance int, updated_at). Kept in sync by a DB trigger on `credit_ledger`. RLS: user reads own.
 
-### `src/routes/login.tsx` (public, SSR-safe)
-Full-viewport dark shell with a centered `folder-tab` card:
-- Acid `§ 05 — Access` label, H1 "Enter the lab.", kicker copy.
-- **Google button** — calls `lovable.auth.signInWithOAuth("google", { redirect_uri: window.location.origin })`.
-- **GitHub button** — calls `supabase.auth.signInWithOAuth({ provider: "github", options: { redirectTo: window.location.origin } })`. Include a small helper line: "GitHub requires enabling the provider in your Supabase dashboard → Authentication → Providers." (per Cloud limitations we already flagged).
-- Optional email/password toggle (collapsed by default) — email + password, `signInWithPassword` + `signUp` with `emailRedirectTo: window.location.origin`.
-- Error surface region.
-- `head()` sets unique title + og.
-- If already signed in (root context), redirect to `/` on mount.
+Plus a `stripe_customers` table (user_id ↔ stripe_customer_id) so we can link webhook events back to users, and a `debit_credits(_amount, _reason)` SECURITY DEFINER function that atomically checks balance and inserts a debit (used by the Playground server fn).
 
-### `src/routes/__root.tsx`
-Add a single `supabase.auth.onAuthStateChange` listener filtered to `SIGNED_IN | SIGNED_OUT | USER_UPDATED` → `router.invalidate()` (+ `queryClient.invalidateQueries()` when not SIGNED_OUT). Do NOT introduce a `_authenticated/` layout — no route currently needs to be gated.
+## Payments setup
 
-### CTA wiring (route to login)
-- `PillNav.tsx` "Start Free" pill → `<Link to="/login">`.
-- `FinalCta.tsx` "Start synthesizing →" → `<Link to="/login">`.
-- Hero primary CTA (if it points to `#demo` as "Start" style) — leave hero's existing "Run the Acid Test" untouched; only change the top-nav "Start Free" and final CTA per user request.
+1. Run `recommend_payment_provider` to confirm Stripe fits (digital SaaS — expected to pass).
+2. Enable seamless Stripe via `enable_stripe_payments` (test mode immediately, no API keys).
+3. Create the 6 products/prices via the batch product tool that appears after enabling. Each gets a Stripe `tax_code` for SaaS.
+4. Default tax handling: **full compliance handling** (`managed_payments`) — digital SaaS, best UX for global buyers.
 
-### Signed-in affordance (required same-turn)
-`PillNav.tsx` reads session from a tiny `useSession()` hook (`onAuthStateChange` + `getUser`). When signed in, the "Start Free" pill becomes an avatar chip with initials + a dropdown containing "Sign out" (calls `supabase.auth.signOut()` then navigates to `/`). Prevents the "clicked Sign in, nothing happens" bug.
+## Server functions (`src/lib/billing.functions.ts`)
 
-## 3. "Build remaining sections"
-Interpreting this as: make sure the whole product story reads end-to-end. Current landing already has Hero → Marquee → Hunt → Protocol → LiveDemo → FinalCta → Footer. The new Threat Detection slots between LiveDemo and FinalCta. Docs page keeps Quickstart → CLI → MCP → Frameworks → API → CTA. No additional sections are needed unless you name one — flag if you had something specific in mind (e.g. Pricing table, Testimonials, FAQ).
+- `createCheckoutSession({ packageId })` — auth-required. Looks up the price, ensures a `stripe_customer` row for the user, creates a Stripe Checkout Session with `success_url=/success?session_id=...`, `cancel_url=/pricing`, returns `url`.
+- `getMyCredits()` — auth-required. Reads `user_credits` for the current user.
+- `debitCredit({ reason })` — auth-required. Calls the `debit_credits` RPC.
 
-## Files
-- add `src/components/site/ThreatDetection.tsx`
-- add `src/hooks/use-session.ts`
-- add `src/routes/login.tsx`
-- add migration for `profiles` + trigger + RLS + grants
-- edit `src/components/site/generators.ts` (export latest snapshot)
-- edit `src/components/site/PillNav.tsx` (Start Free → /login, signed-in chip)
-- edit `src/components/site/FinalCta.tsx` (CTA → /login)
-- edit `src/routes/index.tsx` (insert `<ThreatDetection />`)
-- edit `src/routes/__root.tsx` (auth listener + head unchanged)
-- edit `src/routes/docs.tsx` (small "Threat Detection" link under Frameworks)
+## Public webhook route (`src/routes/api/public/stripe/webhook.ts`)
 
-## Non-goals
-- No `_authenticated/` subtree, no protected routes (nothing to protect yet).
-- No real test execution — mock only.
-- No changes to Hero, Marquee, Hunt, Protocol, LiveDemo internals, Playground, or existing Docs sections.
-- Enabling the GitHub provider inside Supabase is a manual step for you after Cloud is enabled; the button ships wired correctly and shows a helpful message until you toggle it on.
+- Verifies Stripe signature (raw body + `STRIPE_WEBHOOK_SECRET`).
+- Handles `checkout.session.completed` (one-time top-up + first subscription payment) and `invoice.paid` (recurring monthly grants).
+- Looks up the package by `price_id`, inserts a `credit_ledger` row with `stripe_event_id` for idempotency. Trigger updates the cached balance.
+- Handles `customer.subscription.deleted` → mark subscription inactive (no more grants).
 
-## Acceptance
-- `/login` renders with Google + GitHub (+ optional email) and redirects home on success.
-- Signed-in user sees an avatar chip in the nav with working Sign out; sign-in state persists across reloads.
-- New Threat Detection section appears on `/` between LiveDemo and FinalCta, streams a deterministic PASS/FAIL log for both generated and pasted code, and respects reduced motion.
-- `profiles` row is created automatically on first sign-in for every provider.
+## UI changes
+
+- **Pricing.tsx** — each "Get started / Choose" button becomes a form-submit that calls `createCheckoutSession` and redirects to Stripe.
+- **PillNav.tsx** — when signed in, show a small pill on the right: `⚡ 42 credits`, links to Pricing.
+- **success.tsx** — read `?session_id`, poll `getMyCredits()` for a couple seconds until the webhook lands, then show "N credits added, new balance: X".
+- **LiveDemo / Playground "Generate" button** — before generating, call `debitCredit`; on `insufficient_credits`, show an inline toast "Out of credits" with a link to Pricing.
+
+## Secrets
+
+- `STRIPE_WEBHOOK_SECRET` — you'll add this after Stripe is enabled and I give you the webhook URL. I'll request it via the secret form at that step.
+- Stripe API key itself is managed by Lovable (seamless integration).
+
+## Technical notes
+
+- Credits never expire in v1 (the UI copy says "expire after 12 months" — we'll leave that as a future job, not enforce it now).
+- Ledger design means we can always recompute the true balance from history if the cache drifts.
+- Webhook is idempotent via `unique(stripe_event_id)` — safe to receive duplicate events.
+- All monetary amounts stored as integer cents.
+
+## Out of scope (later features in your roadmap)
+
+- Saving generated tests to a table (feature #2).
+- Profile/account page (feature #3).
+- API keys for CLI/MCP with usage metering (feature #4).
+- Enabling GitHub OAuth in Supabase (feature #5).
+
+## Build order
+
+1. Migration for the 4 tables + trigger + `debit_credits` RPC.
+2. `recommend_payment_provider` → `enable_stripe_payments`.
+3. Create the 6 Stripe products.
+4. Server fns + webhook route.
+5. Wire Pricing buttons, nav balance pill, Playground debit, success page.
+6. End-to-end test in Stripe test mode (card `4242 4242 4242 4242`).
