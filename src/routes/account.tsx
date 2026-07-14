@@ -1,8 +1,8 @@
 import { createFileRoute, Link, useNavigate } from "@tanstack/react-router";
-import { useCallback, useEffect, useState } from "react";
+import { useCallback, useEffect, useRef, useState } from "react";
 import { useServerFn } from "@tanstack/react-start";
 import { toast } from "sonner";
-import { Copy, KeyRound, LogOut, Plus, Save, Trash2, User as UserIcon, Zap } from "lucide-react";
+import { Copy, Database, FileUp, FolderUp, KeyRound, LogOut, Plus, Save, Trash2, User as UserIcon, Zap } from "lucide-react";
 import { PillNav } from "@/components/site/PillNav";
 import { Footer } from "@/components/site/FinalCta";
 import { BuyCreditsDialog } from "@/components/site/BuyCreditsDialog";
@@ -198,6 +198,7 @@ function AccountPage() {
 
         <CreditsPanel />
         <ByoKeysPanel />
+        <CustomRagPanel />
         <ApiKeysPanel />
       </section>
       <Footer />
@@ -626,6 +627,206 @@ function ByoKeysPanel() {
           </div>
         );
       })}
+    </div>
+  );
+}
+
+type CustomSource = { source: string; chunks: number; updated_at: string };
+
+async function listSources(): Promise<CustomSource[]> {
+  return [];
+}
+
+async function uploadFiles(_files: File[]): Promise<void> {
+  await new Promise((r) => setTimeout(r, 300));
+}
+
+async function deleteSource(_source: string): Promise<void> {
+  await new Promise((r) => setTimeout(r, 200));
+}
+
+function relTime(iso: string): string {
+  const diff = Date.now() - new Date(iso).getTime();
+  const s = Math.floor(diff / 1000);
+  if (s < 60) return `${s}s ago`;
+  const m = Math.floor(s / 60);
+  if (m < 60) return `${m}m ago`;
+  const h = Math.floor(m / 60);
+  if (h < 24) return `${h}h ago`;
+  const d = Math.floor(h / 24);
+  return `${d}d ago`;
+}
+
+function CustomRagPanel() {
+  const [sources, setSources] = useState<CustomSource[]>([]);
+  const [loading, setLoading] = useState(true);
+  const [uploading, setUploading] = useState(false);
+  const [progress, setProgress] = useState<string>("");
+
+  const filesInputRef = useRef<HTMLInputElement | null>(null);
+  const folderInputRef = useRef<HTMLInputElement | null>(null);
+
+  const refresh = useCallback(async () => {
+    try {
+      const items = await listSources();
+      setSources(items);
+    } catch (err) {
+      toast.error("Failed to load reference docs", { description: (err as Error).message });
+    } finally {
+      setLoading(false);
+    }
+  }, []);
+
+  useEffect(() => {
+    void refresh();
+  }, [refresh]);
+
+  const handleFiles = useCallback(
+    async (fileList: FileList | null) => {
+      if (!fileList || fileList.length === 0) return;
+      const files = Array.from(fileList);
+      setUploading(true);
+      try {
+        for (let i = 0; i < files.length; i++) {
+          const f = files[i];
+          setProgress(`Embedding ${f.name} — ${i + 1}/${files.length}…`);
+          await uploadFiles([f]);
+        }
+        toast.success(`Uploaded ${files.length} file${files.length === 1 ? "" : "s"}`);
+        void refresh();
+      } catch (err) {
+        toast.error("Upload failed", { description: (err as Error).message });
+      } finally {
+        setUploading(false);
+        setProgress("");
+      }
+    },
+    [refresh],
+  );
+
+  async function handleDelete(source: string) {
+    if (!confirm(`Remove "${source}" from your reference knowledge base?`)) return;
+    try {
+      await deleteSource(source);
+      toast.success("Removed");
+      void refresh();
+    } catch (err) {
+      toast.error("Remove failed", { description: (err as Error).message });
+    }
+  }
+
+  const accept = ".txt,.md,.docx,.xlsx,.xls,.csv";
+
+  return (
+    <div className="mt-10 folder-tab p-8 pt-10">
+      <div className="mb-6 flex items-center gap-3">
+        <Database size={16} className="text-acid" />
+        <div>
+          <div className="label-mono text-acid">§ Custom RAG</div>
+          <h2 className="font-display text-2xl font-bold tracking-[-0.02em]">
+            Reference knowledge base
+          </h2>
+          <p className="mt-1 font-mono text-[11px] text-muted-ink">
+            Upload docs or whole folders. AcidTest embeds them and pulls the most relevant
+            passages in as reference when you generate new test suites.
+          </p>
+        </div>
+      </div>
+
+      <div className="mb-5 flex flex-wrap items-center gap-2">
+        <input
+          ref={filesInputRef}
+          type="file"
+          multiple
+          accept={accept}
+          className="hidden"
+          onChange={(e) => {
+            void handleFiles(e.target.files);
+            e.target.value = "";
+          }}
+        />
+        <input
+          ref={folderInputRef}
+          type="file"
+          accept={accept}
+          className="hidden"
+          onChange={(e) => {
+            void handleFiles(e.target.files);
+            e.target.value = "";
+          }}
+          // @ts-expect-error non-standard directory picker attributes
+          webkitdirectory=""
+          directory=""
+        />
+        <button
+          type="button"
+          disabled={uploading}
+          onClick={() => filesInputRef.current?.click()}
+          className="inline-flex items-center gap-2 rounded-md bg-acid px-5 py-3 font-mono text-[11px] font-bold uppercase tracking-widest text-[#0a0a0a] shadow-[0_0_24px_-4px_rgba(197,239,87,0.6)] transition-all hover:shadow-[0_0_40px_-2px_rgba(197,239,87,0.9)] disabled:opacity-50"
+        >
+          <FileUp size={12} />
+          Upload files
+        </button>
+        <button
+          type="button"
+          disabled={uploading}
+          onClick={() => folderInputRef.current?.click()}
+          className="inline-flex items-center gap-2 rounded-md border border-white/10 bg-white/[0.03] px-4 py-2.5 font-mono text-[11px] font-semibold uppercase tracking-widest text-ink transition-all hover:border-acid/40 hover:text-acid disabled:opacity-50"
+        >
+          <FolderUp size={12} />
+          Upload folder
+        </button>
+        {uploading && progress && (
+          <span className="font-mono text-[11px] text-muted-ink">{progress}</span>
+        )}
+      </div>
+
+      <div
+        className={`mb-5 rounded-md border border-dashed border-white/10 bg-white/[0.02] p-6 text-center font-mono text-[11px] text-muted-ink ${
+          uploading ? "opacity-60" : ""
+        }`}
+        onDragOver={(e) => {
+          e.preventDefault();
+        }}
+        onDrop={(e) => {
+          e.preventDefault();
+          if (uploading) return;
+          void handleFiles(e.dataTransfer.files);
+        }}
+      >
+        Drop files here — accepted: .txt, .md, .docx, .xlsx, .xls, .csv
+      </div>
+
+      {loading ? (
+        <div className="font-mono text-[12px] text-muted-ink">Loading…</div>
+      ) : sources.length === 0 ? (
+        <div className="font-mono text-[12px] text-muted-ink">
+          No reference docs yet. Upload files or a folder to ground your generations.
+        </div>
+      ) : (
+        <div className="grid gap-2">
+          {sources.map((s) => (
+            <div
+              key={s.source}
+              className="flex items-center justify-between gap-3 rounded-md border border-white/10 bg-white/[0.02] p-4"
+            >
+              <div className="min-w-0">
+                <div className="truncate font-mono text-[13px] text-ink">{s.source}</div>
+                <div className="mt-0.5 font-mono text-[11px] text-muted-ink">
+                  {s.chunks} chunk{s.chunks === 1 ? "" : "s"} · added {relTime(s.updated_at)}
+                </div>
+              </div>
+              <button
+                type="button"
+                onClick={() => handleDelete(s.source)}
+                className="inline-flex items-center gap-1 rounded-md border border-white/10 px-3 py-2.5 font-mono text-[11px] uppercase tracking-widest text-muted-ink hover:border-red-400/40 hover:text-red-300"
+              >
+                <Trash2 size={11} /> Remove
+              </button>
+            </div>
+          ))}
+        </div>
+      )}
     </div>
   );
 }
