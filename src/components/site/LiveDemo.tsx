@@ -21,13 +21,58 @@ export function LiveDemo() {
   const navigate = useNavigate();
   const { balance, consume, refresh } = useCredits();
   const save = useServerFn(saveTest);
+  const parseFile = useServerFn(parseUploadedFile);
   const [story, setStory] = useState(DEFAULT_STORY);
   const [fw, setFw] = useState<Framework>("Playwright");
   const [runKey, setRunKey] = useState(0);
   const [saving, setSaving] = useState(false);
+  const [uploading, setUploading] = useState(false);
   const [revealed, setRevealed] = useState(false);
   const [buyOpen, setBuyOpen] = useState(false);
+  const fileRef = useRef<HTMLInputElement>(null);
   const code = generateCode(fw, story);
+
+  async function handleFile(e: React.ChangeEvent<HTMLInputElement>) {
+    const file = e.target.files?.[0];
+    e.target.value = "";
+    if (!file) return;
+    if (!user) {
+      toast.error("Sign in to upload documents");
+      return;
+    }
+    if (file.size > 5 * 1024 * 1024) {
+      toast.error("File too large", { description: "Max 5 MB." });
+      return;
+    }
+    setUploading(true);
+    try {
+      const buf = await file.arrayBuffer();
+      const bytes = new Uint8Array(buf);
+      let bin = "";
+      const chunk = 0x8000;
+      for (let i = 0; i < bytes.length; i += chunk) {
+        bin += String.fromCharCode.apply(null, Array.from(bytes.subarray(i, i + chunk)));
+      }
+      const base64 = btoa(bin);
+      const res = await parseFile({ data: { filename: file.name, base64 } });
+      if ("error" in res) {
+        toast.error("Parse failed", { description: res.error });
+        return;
+      }
+      const clean = res.text.trim();
+      if (!clean) {
+        toast.error("Empty document");
+        return;
+      }
+      setStory(clean.slice(0, 4000));
+      toast.success("Loaded", { description: `${file.name} → user story` });
+    } catch (err) {
+      toast.error("Upload failed", { description: (err as Error).message });
+    } finally {
+      setUploading(false);
+    }
+  }
+
 
   async function handleGenerate() {
     if (!user) {
