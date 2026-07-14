@@ -291,18 +291,10 @@ function Playground() {
             </p>
 
             <label className="label-mono block text-acid">Framework</label>
-            <select
-              value={fw}
-              onChange={(e) => setFw(e.target.value as Framework)}
-              className="w-full rounded-md border border-white/10 bg-carbon/60 p-3 font-mono text-[13px] text-ink outline-none focus:border-acid/50"
-            >
-              {ALL.map((f) => (
-                <option key={f} value={f}>{f}</option>
-              ))}
-              {EXTRA.map((f) => (
-                <option key={f} value={f} disabled>{f} (soon)</option>
-              ))}
-            </select>
+            <FrameworkPicker value={fw} onChange={setFw} />
+            <p className="font-mono text-[10px] text-muted-ink">
+              {FRAMEWORK_META[fw].lang} · .{FRAMEWORK_META[fw].ext}
+            </p>
             <button
               onClick={run}
               disabled={generating}
