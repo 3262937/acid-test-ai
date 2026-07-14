@@ -736,7 +736,7 @@ function CustomRagPanel() {
       <div className="mb-5 flex flex-wrap items-center gap-2">
         <input
           ref={(el) => {
-            filesInputRef[1](el);
+            (el) => { filesInputRef.current = el; }(el);
           }}
           type="file"
           multiple
@@ -749,7 +749,7 @@ function CustomRagPanel() {
         />
         <input
           ref={(el) => {
-            folderInputRef[1](el);
+            (el) => { folderInputRef.current = el; }(el);
           }}
           type="file"
           accept={accept}
@@ -765,7 +765,7 @@ function CustomRagPanel() {
         <button
           type="button"
           disabled={uploading}
-          onClick={() => filesInputRef[0]?.click()}
+          onClick={() => filesInputRef.current?.click()}
           className="inline-flex items-center gap-2 rounded-md bg-acid px-5 py-3 font-mono text-[11px] font-bold uppercase tracking-widest text-[#0a0a0a] shadow-[0_0_24px_-4px_rgba(197,239,87,0.6)] transition-all hover:shadow-[0_0_40px_-2px_rgba(197,239,87,0.9)] disabled:opacity-50"
         >
           <FileUp size={12} />
@@ -774,7 +774,7 @@ function CustomRagPanel() {
         <button
           type="button"
           disabled={uploading}
-          onClick={() => folderInputRef[0]?.click()}
+          onClick={() => folderInputRef.current?.click()}
           className="inline-flex items-center gap-2 rounded-md border border-white/10 bg-white/[0.03] px-4 py-2.5 font-mono text-[11px] font-semibold uppercase tracking-widest text-ink transition-all hover:border-acid/40 hover:text-acid disabled:opacity-50"
         >
           <FolderUp size={12} />
