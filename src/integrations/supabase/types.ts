@@ -14,84 +14,6 @@ export type Database = {
   }
   public: {
     Tables: {
-      credit_ledger: {
-        Row: {
-          created_at: string
-          delta: number
-          id: number
-          metadata: Json
-          reason: string
-          stripe_event_id: string | null
-          user_id: string
-        }
-        Insert: {
-          created_at?: string
-          delta: number
-          id?: number
-          metadata?: Json
-          reason: string
-          stripe_event_id?: string | null
-          user_id: string
-        }
-        Update: {
-          created_at?: string
-          delta?: number
-          id?: number
-          metadata?: Json
-          reason?: string
-          stripe_event_id?: string | null
-          user_id?: string
-        }
-        Relationships: []
-      }
-      credit_packages: {
-        Row: {
-          active: boolean
-          created_at: string
-          credits: number
-          currency: string
-          description: string | null
-          id: string
-          kind: string
-          name: string
-          price_cents: number
-          sort_order: number
-          stripe_price_id: string | null
-          tier: string | null
-          updated_at: string
-        }
-        Insert: {
-          active?: boolean
-          created_at?: string
-          credits: number
-          currency?: string
-          description?: string | null
-          id: string
-          kind: string
-          name: string
-          price_cents: number
-          sort_order?: number
-          stripe_price_id?: string | null
-          tier?: string | null
-          updated_at?: string
-        }
-        Update: {
-          active?: boolean
-          created_at?: string
-          credits?: number
-          currency?: string
-          description?: string | null
-          id?: string
-          kind?: string
-          name?: string
-          price_cents?: number
-          sort_order?: number
-          stripe_price_id?: string | null
-          tier?: string | null
-          updated_at?: string
-        }
-        Relationships: []
-      }
       profiles: {
         Row: {
           avatar_url: string | null
@@ -146,103 +68,12 @@ export type Database = {
         }
         Relationships: []
       }
-      stripe_customers: {
-        Row: {
-          created_at: string
-          stripe_customer_id: string
-          user_id: string
-        }
-        Insert: {
-          created_at?: string
-          stripe_customer_id: string
-          user_id: string
-        }
-        Update: {
-          created_at?: string
-          stripe_customer_id?: string
-          user_id?: string
-        }
-        Relationships: []
-      }
-      subscriptions: {
-        Row: {
-          cancel_at_period_end: boolean | null
-          created_at: string | null
-          current_period_end: string | null
-          current_period_start: string | null
-          environment: string
-          id: string
-          price_id: string
-          product_id: string
-          status: string
-          stripe_customer_id: string
-          stripe_subscription_id: string
-          updated_at: string | null
-          user_id: string
-        }
-        Insert: {
-          cancel_at_period_end?: boolean | null
-          created_at?: string | null
-          current_period_end?: string | null
-          current_period_start?: string | null
-          environment?: string
-          id?: string
-          price_id: string
-          product_id: string
-          status?: string
-          stripe_customer_id: string
-          stripe_subscription_id: string
-          updated_at?: string | null
-          user_id: string
-        }
-        Update: {
-          cancel_at_period_end?: boolean | null
-          created_at?: string | null
-          current_period_end?: string | null
-          current_period_start?: string | null
-          environment?: string
-          id?: string
-          price_id?: string
-          product_id?: string
-          status?: string
-          stripe_customer_id?: string
-          stripe_subscription_id?: string
-          updated_at?: string | null
-          user_id?: string
-        }
-        Relationships: []
-      }
-      user_credits: {
-        Row: {
-          balance: number
-          updated_at: string
-          user_id: string
-        }
-        Insert: {
-          balance?: number
-          updated_at?: string
-          user_id: string
-        }
-        Update: {
-          balance?: number
-          updated_at?: string
-          user_id?: string
-        }
-        Relationships: []
-      }
     }
     Views: {
       [_ in never]: never
     }
     Functions: {
-      debit_credits: {
-        Args: { _amount: number; _reason: string }
-        Returns: number
-      }
-      has_active_subscription: {
-        Args: { check_env?: string; user_uuid: string }
-        Returns: boolean
-      }
+      [_ in never]: never
     }
     Enums: {
       [_ in never]: never
