@@ -355,7 +355,10 @@ export function ThreatDetection() {
           ) : (
             <textarea
               value={own}
-              onChange={(e) => setOwn(e.target.value)}
+              onChange={(e) => {
+                setOwn(e.target.value);
+                if (uploadedName) setUploadedName(null);
+              }}
               rows={16}
               placeholder="// Paste Playwright, Cypress, or Selenium code…"
               className="w-full resize-none rounded-md border border-white/10 bg-carbon/60 p-4 font-mono text-[12.5px] leading-[1.7] text-ink outline-none focus:border-acid/50 focus:ring-2 focus:ring-acid/30"
