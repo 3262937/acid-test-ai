@@ -144,6 +144,7 @@ export function ThreatDetection() {
   const [logs, setLogs] = useState<LogLine[]>([]);
   const [verdicts, setVerdicts] = useState<Verdict[]>([]);
   const [uploading, setUploading] = useState(false);
+  const [uploadedName, setUploadedName] = useState<string | null>(null);
   const timeouts = useRef<number[]>([]);
   const fileRef = useRef<HTMLInputElement>(null);
 
@@ -159,8 +160,10 @@ export function ThreatDetection() {
     try {
       const text = await file.text();
       setOwn(text.slice(0, 50_000));
+      setUploadedName(file.name);
       setTab("own");
-      toast.success("Loaded", { description: `${file.name} → editor` });
+      const detected = detectFramework(text, file.name);
+      toast.success(`Detected: ${detected}`, { description: `${file.name} → editor` });
     } catch (err) {
       toast.error("Read failed", { description: (err as Error).message });
     } finally {
@@ -169,7 +172,10 @@ export function ThreatDetection() {
   }
 
   const activeCode = tab === "generated" ? DEFAULT_GENERATED : own;
-  const framework = useMemo(() => detectFramework(activeCode), [activeCode]);
+  const framework = useMemo(
+    () => detectFramework(activeCode, tab === "own" ? uploadedName ?? undefined : undefined),
+    [activeCode, tab, uploadedName],
+  );
   const summary = useMemo(() => {
     if (verdicts.length === 0) return null;
     const pass = verdicts.filter((v) => v.status === "PASS").length;
