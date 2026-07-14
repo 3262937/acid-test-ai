@@ -100,6 +100,11 @@ export const Route = createFileRoute("/api/public/v1/tests")({
       GET: async ({ request }) => {
         const auth = await authenticate(request);
         if (!auth.ok) return auth.response;
+        const rl = checkRateLimit(auth.key.id);
+        if (!rl.ok) {
+          void meter(auth.key, "GET /v1/tests", 429);
+          return rateLimitResponse(rl.retryAfter);
+        }
         const { supabaseAdmin } = await import("@/integrations/supabase/client.server");
         const { data, error } = await supabaseAdmin
           .from("saved_tests")
