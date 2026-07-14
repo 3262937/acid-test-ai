@@ -116,6 +116,36 @@ export type Database = {
         }
         Relationships: []
       }
+      saved_tests: {
+        Row: {
+          code: string
+          created_at: string
+          framework: string
+          id: string
+          story: string
+          title: string
+          user_id: string
+        }
+        Insert: {
+          code: string
+          created_at?: string
+          framework: string
+          id?: string
+          story: string
+          title: string
+          user_id: string
+        }
+        Update: {
+          code?: string
+          created_at?: string
+          framework?: string
+          id?: string
+          story?: string
+          title?: string
+          user_id?: string
+        }
+        Relationships: []
+      }
       stripe_customers: {
         Row: {
           created_at: string
