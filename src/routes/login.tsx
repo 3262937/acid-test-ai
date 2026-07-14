@@ -220,7 +220,7 @@ function LoginPage() {
         </div>
 
         <p className="mt-6 text-center text-[11px] text-muted-ink">
-          GitHub sign-in requires enabling the GitHub provider in your Cloud auth settings.
+          Google sign-in is active. GitHub sign-in returns after the Supabase migration.
         </p>
       </div>
     </main>
