@@ -343,7 +343,7 @@ function Playground() {
                 <CodeTyper
                   key={`${fw}-${runKey}`}
                   code={generatedCode || generateCode(fw, story)}
-                  filename={`generated.${fw.toLowerCase()}.ts`}
+                  filename={`generated.${FRAMEWORK_META[fw].ext}`}
                 />
               </>
             ) : (
