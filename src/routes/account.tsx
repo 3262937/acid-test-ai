@@ -542,7 +542,7 @@ function ByoKeysPanel() {
   }
 
   async function handleDelete(provider: Provider) {
-    if (!confirm(`Remove your ${provider === "openai" ? "OpenAI" : "Claude"} key?`)) return;
+    if (!confirm(`Remove your ${providerLabel(provider)} key?`)) return;
     try {
       await del({ data: { provider } });
       toast.success("Removed");
