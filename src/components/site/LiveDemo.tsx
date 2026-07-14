@@ -1,16 +1,17 @@
-import { useState } from "react";
+import { useRef, useState } from "react";
 import { Link, useNavigate } from "@tanstack/react-router";
 import { useServerFn } from "@tanstack/react-start";
 import { toast } from "sonner";
-import { Bookmark, Zap } from "lucide-react";
+import { Bookmark, Upload, Zap } from "lucide-react";
 import { CodeTyper } from "./CodeTyper";
 import { BuyCreditsDialog } from "./BuyCreditsDialog";
-import { generateCode, type Framework } from "./generators";
+import { generateCode, FRAMEWORK_META, type Framework } from "./generators";
+import { FrameworkPicker } from "./FrameworkPicker";
 import { useSession } from "@/hooks/use-session";
 import { useCredits } from "@/hooks/use-credits";
 import { saveTest } from "@/lib/saved-tests.functions";
+import { parseUploadedFile } from "@/lib/ai-generate.functions";
 
-const FRAMEWORKS: Framework[] = ["Playwright", "Cypress", "Selenium"];
 const DEFAULT_STORY =
   "As a registered user, I want to reset my password via email link, so that I can regain access to my account.";
 const FREE_TRY_KEY = "acidtest_free_try_used";
