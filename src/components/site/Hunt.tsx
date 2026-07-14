@@ -235,14 +235,7 @@ export function Hunt() {
       // Spotlight cone over target
       if (spotlightRef.current > 0) {
         const sp = spotlightRef.current;
-        const grad = ctx.createRadialGradient(
-          target.x,
-          target.y,
-          10,
-          target.x,
-          target.y,
-          220,
-        );
+        const grad = ctx.createRadialGradient(target.x, target.y, 10, target.x, target.y, 220);
         grad.addColorStop(0, `rgba(255, 220, 160, ${0.22 * sp})`);
         grad.addColorStop(0.5, `rgba(255, 200, 120, ${0.08 * sp})`);
         grad.addColorStop(1, "rgba(0,0,0,0)");
@@ -255,14 +248,7 @@ export function Hunt() {
       // Red beetle with pulsing glow
       target.pulse = (target.pulse + 0.04) % (Math.PI * 2);
       const glowR = 26 + Math.sin(target.pulse) * 6;
-      const glow = ctx.createRadialGradient(
-        target.x,
-        target.y,
-        2,
-        target.x,
-        target.y,
-        glowR * 2.2,
-      );
+      const glow = ctx.createRadialGradient(target.x, target.y, 2, target.x, target.y, glowR * 2.2);
       glow.addColorStop(0, "rgba(255,77,77,0.55)");
       glow.addColorStop(1, "rgba(255,77,77,0)");
       ctx.fillStyle = glow;
@@ -425,9 +411,7 @@ export function Hunt() {
             >
               <span>▶</span> Scan the swarm
             </button>
-            {readout && (
-              <div className="label-mono mt-6 text-acid">{readout}</div>
-            )}
+            {readout && <div className="label-mono mt-6 text-acid">{readout}</div>}
           </div>
         </div>
 

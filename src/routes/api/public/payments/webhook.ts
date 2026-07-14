@@ -5,10 +5,7 @@ import { type StripeEnv, verifyWebhook } from "@/lib/stripe.server";
 let _supabase: ReturnType<typeof createClient> | null = null;
 function getSupabase() {
   if (!_supabase) {
-    _supabase = createClient(
-      process.env.SUPABASE_URL!,
-      process.env.SUPABASE_SERVICE_ROLE_KEY!,
-    );
+    _supabase = createClient(process.env.SUPABASE_URL!, process.env.SUPABASE_SERVICE_ROLE_KEY!);
   }
   return _supabase;
 }
@@ -23,12 +20,15 @@ async function handleCheckoutCompleted(session: Record<string, unknown>, env: St
     return;
   }
   const idempotencyKey = `stripe:${env}:${sessionId}`;
-  const { error } = await getSupabase().rpc("add_credits" as never, {
-    _user_id: userId,
-    _amount: credits,
-    _reason: `purchase:${metadata.priceId ?? "unknown"}`,
-    _idempotency_key: idempotencyKey,
-  } as never);
+  const { error } = await getSupabase().rpc(
+    "add_credits" as never,
+    {
+      _user_id: userId,
+      _amount: credits,
+      _reason: `purchase:${metadata.priceId ?? "unknown"}`,
+      _idempotency_key: idempotencyKey,
+    } as never,
+  );
   if (error) console.error("add_credits failed", error);
 }
 

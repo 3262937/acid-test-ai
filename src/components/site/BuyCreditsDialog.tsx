@@ -92,10 +92,7 @@ export function BuyCreditsDialog({
                 Loading checkout…
               </div>
             )}
-            <EmbeddedCheckoutProvider
-              stripe={getStripe()}
-              options={{ fetchClientSecret }}
-            >
+            <EmbeddedCheckoutProvider stripe={getStripe()} options={{ fetchClientSecret }}>
               <EmbeddedCheckout />
             </EmbeddedCheckoutProvider>
           </div>

@@ -28,9 +28,7 @@ export function LegalShell({
             {title}
           </h1>
           {updated && (
-            <p className="mt-3 font-mono text-[11px] text-muted-ink">
-              Last updated · {updated}
-            </p>
+            <p className="mt-3 font-mono text-[11px] text-muted-ink">Last updated · {updated}</p>
           )}
         </div>
         <article className="prose-legal mt-12">{children}</article>
@@ -40,7 +38,15 @@ export function LegalShell({
   );
 }
 
-export function Sec({ id, heading, children }: { id: string; heading: string; children: ReactNode }) {
+export function Sec({
+  id,
+  heading,
+  children,
+}: {
+  id: string;
+  heading: string;
+  children: ReactNode;
+}) {
   return (
     <section id={id} className="mt-10 first:mt-0">
       <h2 className="font-display text-2xl font-semibold tracking-[-0.01em] text-ink md:text-3xl">

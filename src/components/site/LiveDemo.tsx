@@ -2,11 +2,12 @@ import { useRef, useState } from "react";
 import { Link, useNavigate } from "@tanstack/react-router";
 import { useServerFn } from "@tanstack/react-start";
 import { toast } from "sonner";
-import { Bookmark, Upload, Zap } from "lucide-react";
+import { Bookmark, Upload, Zap, Github } from "lucide-react";
 import { CodeTyper } from "./CodeTyper";
 import { BuyCreditsDialog } from "./BuyCreditsDialog";
 import { generateCode, FRAMEWORK_META, type Framework } from "./generators";
 import { FrameworkPicker } from "./FrameworkPicker";
+import { GitHubExportDialog } from "./GitHubExportDialog";
 import { useSession } from "@/hooks/use-session";
 import { useCredits } from "@/hooks/use-credits";
 import { saveTest } from "@/lib/saved-tests.functions";
@@ -29,6 +30,7 @@ export function LiveDemo() {
   const [uploading, setUploading] = useState(false);
   const [revealed, setRevealed] = useState(false);
   const [buyOpen, setBuyOpen] = useState(false);
+  const [ghOpen, setGhOpen] = useState(false);
   const fileRef = useRef<HTMLInputElement>(null);
   const code = generateCode(fw, story);
 
@@ -72,7 +74,6 @@ export function LiveDemo() {
       setUploading(false);
     }
   }
-
 
   async function handleGenerate() {
     if (!user) {
@@ -133,11 +134,16 @@ export function LiveDemo() {
             </h2>
             {!user ? (
               <p className="mt-3 text-sm text-muted-ink">
-                1 free preview. <Link to="/login" className="text-acid hover:underline">Sign in</Link> for 3 welcome credits and to save your tests.
+                1 free preview.{" "}
+                <Link to="/login" className="text-acid hover:underline">
+                  Sign in
+                </Link>{" "}
+                for 3 welcome credits and to save your tests.
               </p>
             ) : (
               <p className="mt-3 text-sm text-muted-ink">
-                Credits: <span className="font-mono text-acid">{balance ?? "—"}</span> · 1 credit per generation.
+                Credits: <span className="font-mono text-acid">{balance ?? "—"}</span> · 1 credit
+                per generation.
                 {balance !== null && balance < 3 && (
                   <>
                     {" "}
@@ -205,6 +211,20 @@ export function LiveDemo() {
                 <Bookmark size={12} />
                 {saving ? "Saving…" : "Save"}
               </button>
+              <button
+                onClick={() => {
+                  if (!user) {
+                    toast.error("Sign in to export to GitHub");
+                    return;
+                  }
+                  setGhOpen(true);
+                }}
+                className="inline-flex items-center gap-1.5 rounded-md border border-white/10 bg-white/[0.03] px-3 py-2 font-mono text-[11px] font-bold uppercase tracking-widest text-ink transition-all hover:border-acid/40 hover:text-acid disabled:opacity-50"
+                title={user ? "Push to GitHub" : "Sign in to export"}
+              >
+                <Github size={12} />
+                GitHub
+              </button>
             </div>
             {revealed ? (
               <CodeTyper
@@ -216,7 +236,8 @@ export function LiveDemo() {
               <div className="folder-tab-solid flex h-[440px] flex-col items-center justify-center gap-3 p-6 text-center">
                 <div className="label-mono text-acid">§ Awaiting input</div>
                 <p className="max-w-sm text-sm text-muted-ink">
-                  Hit <span className="font-mono text-ink">Generate</span> to synthesize a runnable {fw} spec from your story.
+                  Hit <span className="font-mono text-ink">Generate</span> to synthesize a runnable{" "}
+                  {fw} spec from your story.
                 </p>
                 <p className="font-mono text-[11px] text-muted-ink">
                   {user ? "1 credit per run." : "1 free preview, then sign in."}
@@ -227,6 +248,14 @@ export function LiveDemo() {
         </div>
       </section>
       <BuyCreditsDialog open={buyOpen} onClose={() => setBuyOpen(false)} onSuccess={refresh} />
+      <GitHubExportDialog
+        open={ghOpen}
+        onClose={() => setGhOpen(false)}
+        title={story.trim().slice(0, 80) || `${fw} test`}
+        framework={fw}
+        code={code}
+        filename={`password-reset.${FRAMEWORK_META[fw].ext}`}
+      />
     </>
   );
 }

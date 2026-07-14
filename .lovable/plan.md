@@ -1,6 +1,7 @@
 ## Goal
 
 Two parallel tracks:
+
 1. **Mirror the AcidTest project codebase to GitHub** via Lovable's built-in Git sync.
 2. **Let signed-in users push generated test suites from the Playground / Saved tests page to a GitHub repo they own**.
 
@@ -92,6 +93,7 @@ Create `src/lib/github-export.functions.ts`:
 ## Files to create / edit
 
 ### New files
+
 - `README.md`
 - `LICENSE`
 - `.github/workflows/ci.yml`
@@ -100,6 +102,7 @@ Create `src/lib/github-export.functions.ts`:
 - `supabase/migrations/<timestamp>_add_user_github_settings.sql`
 
 ### Edited files
+
 - `src/routes/playground.tsx` — add GitHub export button.
 - `src/components/site/LiveDemo.tsx` — add GitHub export button.
 - `src/routes/saved.tsx` — add per-test GitHub export button.

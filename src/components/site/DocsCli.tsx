@@ -58,8 +58,8 @@ export function DocsCli() {
           <span className="italic text-acid">acidtest</span> — terminal-native.
         </h2>
         <p className="mt-4 max-w-xl text-muted-ink">
-          A single binary. Local-first synthesis, offline replay, and a CI mode
-          that speaks JUnit, GitHub, and TAP fluently.
+          A single binary. Local-first synthesis, offline replay, and a CI mode that speaks JUnit,
+          GitHub, and TAP fluently.
         </p>
       </div>
 

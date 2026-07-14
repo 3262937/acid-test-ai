@@ -79,9 +79,8 @@ function DocsPage() {
           Operating the <span className="italic text-acid">Acid Test.</span>
         </h1>
         <p className="mt-6 max-w-2xl text-lg text-muted-ink">
-          Everything you need to run AcidTest from a terminal, a CI pipeline,
-          or the belly of an AI agent — install to first passing suite in
-          under five minutes.
+          Everything you need to run AcidTest from a terminal, a CI pipeline, or the belly of an AI
+          agent — install to first passing suite in under five minutes.
         </p>
         <div className="mt-8 flex flex-wrap gap-2">
           {JUMPS.map(([label, href]) => (
@@ -131,8 +130,8 @@ function DocsPage() {
             REST, if you must.
           </h2>
           <p className="mt-4 max-w-xl text-muted-ink">
-            Prefer curl over MCP? The same synthesis engine is a single POST
-            away. Rate limits scale with plan.
+            Prefer curl over MCP? The same synthesis engine is a single POST away. Rate limits scale
+            with plan.
           </p>
         </div>
         <CodeTyper code={API} filename="POST /v1/suites" />

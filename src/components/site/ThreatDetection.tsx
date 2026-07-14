@@ -35,7 +35,7 @@ function hash(s: string) {
 }
 function rng(seed: number) {
   let x = seed || 1;
-  return () => ((x = (x * 1664525 + 1013904223) >>> 0) / 0xffffffff);
+  return () => (x = (x * 1664525 + 1013904223) >>> 0) / 0xffffffff;
 }
 
 function extractTitles(code: string): string[] {
@@ -101,12 +101,12 @@ function detectFramework(code: string, filename?: string): DetectedFw {
   if (name.endsWith(".robot")) return "Robot Framework";
   if (name.endsWith(".swift")) return "XCUITest";
   if (name.endsWith(".kt")) return "Espresso";
-  if (name.endsWith(".postman.json") || name.endsWith(".postman_collection.json"))
-    return "Postman";
+  if (name.endsWith(".postman.json") || name.endsWith(".postman_collection.json")) return "Postman";
 
   // Content signatures — most specific first
   if (/@playwright\/test|from ["']playwright|await page\.getBy/.test(src)) return "Playwright";
-  if (/\bcy\.\w+\(|\/\/\/\s*<reference types="cypress"|cypress\.config/i.test(src)) return "Cypress";
+  if (/\bcy\.\w+\(|\/\/\/\s*<reference types="cypress"|cypress\.config/i.test(src))
+    return "Cypress";
   if (/@wdio\/|browser\.\$\(|wdio\.conf/i.test(src)) return "WebdriverIO";
   if (/from ["']puppeteer|require\(["']puppeteer["']\)|puppeteer\.launch/.test(src))
     return "Puppeteer";
@@ -132,8 +132,12 @@ function detectFramework(code: string, filename?: string): DetectedFw {
 }
 
 function fmt(ms: number) {
-  const s = Math.floor(ms / 1000).toString().padStart(2, "0");
-  const cs = Math.floor((ms % 1000) / 10).toString().padStart(2, "0");
+  const s = Math.floor(ms / 1000)
+    .toString()
+    .padStart(2, "0");
+  const cs = Math.floor((ms % 1000) / 10)
+    .toString()
+    .padStart(2, "0");
   return `${s}.${cs}`;
 }
 
@@ -173,7 +177,7 @@ export function ThreatDetection() {
 
   const activeCode = tab === "generated" ? DEFAULT_GENERATED : own;
   const framework = useMemo(
-    () => detectFramework(activeCode, tab === "own" ? uploadedName ?? undefined : undefined),
+    () => detectFramework(activeCode, tab === "own" ? (uploadedName ?? undefined) : undefined),
     [activeCode, tab, uploadedName],
   );
   const summary = useMemo(() => {
@@ -216,7 +220,11 @@ export function ThreatDetection() {
     push(320, () =>
       setLogs((l) => [
         ...l,
-        { t: fmt(t), msg: `▸ resolving ${titles.length} scenarios · seed 0x${seed.toString(16).slice(0, 6)}`, tone: "muted" },
+        {
+          t: fmt(t),
+          msg: `▸ resolving ${titles.length} scenarios · seed 0x${seed.toString(16).slice(0, 6)}`,
+          tone: "muted",
+        },
       ]),
     );
     push(280, () =>
@@ -228,10 +236,7 @@ export function ThreatDetection() {
       const ms = 90 + Math.floor(rand() * 260);
       const pass = rand() > 0.22; // ~78% pass — feels real
       push(260 + Math.floor(rand() * 240), () =>
-        setLogs((l) => [
-          ...l,
-          { t: fmt(t), msg: `→ ${title}`, tone: "muted" },
-        ]),
+        setLogs((l) => [...l, { t: fmt(t), msg: `→ ${title}`, tone: "muted" }]),
       );
       push(ms, () => {
         const v: Verdict = {
@@ -289,9 +294,8 @@ export function ThreatDetection() {
             Run it. See what breaks.
           </h2>
           <p className="mt-4 max-w-xl text-muted-ink">
-            Point AcidTest at a generated suite or paste your own — the
-            harness streams a deterministic PASS / FAIL verdict for every
-            scenario in the file.
+            Point AcidTest at a generated suite or paste your own — the harness streams a
+            deterministic PASS / FAIL verdict for every scenario in the file.
           </p>
         </div>
         <div className="inline-flex items-center gap-2 rounded-full border border-acid/30 bg-[rgba(197,239,87,0.05)] px-4 py-2">
@@ -349,7 +353,6 @@ export function ThreatDetection() {
 
           {tab === "generated" ? (
             <pre className="max-h-[420px] overflow-auto rounded-md border border-white/5 bg-carbon/60 p-4 font-mono text-[12.5px] leading-[1.7] text-ink/85">
-
               <code>{DEFAULT_GENERATED}</code>
             </pre>
           ) : (
@@ -381,9 +384,7 @@ export function ThreatDetection() {
 
           <div className="min-h-[300px] rounded-md border border-white/5 bg-[#0a0a0b] p-4 font-mono text-[12px] leading-[1.75]">
             {logs.length === 0 ? (
-              <span className="text-muted-ink">
-                {"// idle — press ▶ to release the harness"}
-              </span>
+              <span className="text-muted-ink">{"// idle — press ▶ to release the harness"}</span>
             ) : (
               logs.map((l, i) => (
                 <div key={i} className="flex gap-3">
@@ -433,8 +434,7 @@ export function ThreatDetection() {
               }`}
             >
               <span className="text-ink/80">
-                {summary.count} scanned ·{" "}
-                <span className="text-acid">{summary.pass} PASS</span> ·{" "}
+                {summary.count} scanned · <span className="text-acid">{summary.pass} PASS</span> ·{" "}
                 <span className="text-[#ff9c9c]">{summary.fail} FAIL</span>
               </span>
               <span className="text-muted-ink">{summary.total}ms total</span>

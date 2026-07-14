@@ -6,7 +6,11 @@ type TC = { id: string; prio: string; title: string };
 
 const CASES: TC[] = [
   { id: "TC-001", prio: "P0", title: "Valid email receives password-reset link" },
-  { id: "TC-002", prio: "P0", title: "Invalid email returns generic success — no account enumeration" },
+  {
+    id: "TC-002",
+    prio: "P0",
+    title: "Invalid email returns generic success — no account enumeration",
+  },
   { id: "TC-003", prio: "P1", title: "Reset link rejected after 60-minute expiry" },
 ];
 
@@ -64,12 +68,15 @@ export function Hero() {
             Specimen BUG-001 · Class: Production Defect
           </div>
           <h1 className="font-display text-5xl leading-[0.95] font-bold tracking-[-0.02em] text-ink md:text-6xl">
-            Every bug<br />meets its<br />
+            Every bug
+            <br />
+            meets its
+            <br />
             <span className="italic text-acid">acid test.</span>
           </h1>
           <p className="mt-6 max-w-md text-[15px] leading-relaxed text-muted-ink">
-            Paste a user story. AcidTest breeds the scenarios, edge cases and ready-to-run
-            suites that hunt the bug down — in seconds.
+            Paste a user story. AcidTest breeds the scenarios, edge cases and ready-to-run suites
+            that hunt the bug down — in seconds.
           </p>
           <div className="mt-8 flex flex-wrap items-center gap-3">
             <button

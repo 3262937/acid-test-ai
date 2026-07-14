@@ -8,7 +8,11 @@ export const Route = createFileRoute("/status")({
   head: () => ({
     meta: [
       { title: "Status — AcidTest" },
-      { name: "description", content: "Live operational status of AcidTest systems: web, auth, database, AI generation, and payments." },
+      {
+        name: "description",
+        content:
+          "Live operational status of AcidTest systems: web, auth, database, AI generation, and payments.",
+      },
       { property: "og:title", content: "Status — AcidTest" },
       { property: "og:description", content: "Real-time health of AcidTest components." },
       { property: "og:type", content: "website" },
@@ -24,8 +28,19 @@ type Row = { key: string; name: string; desc: string; state: State; note?: strin
 const INITIAL: Row[] = [
   { key: "web", name: "Web app", desc: "TanStack Start · Cloudflare edge", state: "ok" },
   { key: "auth", name: "Authentication", desc: "Email + Google/GitHub OAuth", state: "checking" },
-  { key: "db", name: "Database + RLS", desc: "Postgres with row-level security", state: "checking" },
-  { key: "ai", name: "AI generation", desc: "BYO OpenAI / Anthropic keys", state: "ok", note: "Uses your own API key — depends on provider uptime." },
+  {
+    key: "db",
+    name: "Database + RLS",
+    desc: "Postgres with row-level security",
+    state: "checking",
+  },
+  {
+    key: "ai",
+    name: "AI generation",
+    desc: "BYO OpenAI / Anthropic keys",
+    state: "ok",
+    note: "Uses your own API key — depends on provider uptime.",
+  },
   { key: "payments", name: "Payments", desc: "Stripe credit packs", state: "ok" },
   { key: "storage", name: "Uploads & parsing", desc: ".docx / .xlsx / .csv / .txt", state: "ok" },
 ];
@@ -86,19 +101,29 @@ function StatusPage() {
   const overall: State = rows.some((r) => r.state === "down")
     ? "down"
     : rows.some((r) => r.state === "degraded")
-    ? "degraded"
-    : rows.some((r) => r.state === "checking")
-    ? "checking"
-    : "ok";
+      ? "degraded"
+      : rows.some((r) => r.state === "checking")
+        ? "checking"
+        : "ok";
 
   return (
-    <LegalShell section="§ Trust — Status" title="System status" updated={checkedAt ? `Checked ${checkedAt}` : "Checking…"}>
+    <LegalShell
+      section="§ Trust — Status"
+      title="System status"
+      updated={checkedAt ? `Checked ${checkedAt}` : "Checking…"}
+    >
       <Sec id="overall" heading="1. Overall">
         <div className="flex items-center gap-3 rounded-md border border-white/10 bg-white/[0.03] p-4">
           <span className={`inline-block h-3 w-3 rounded-full ${DOT[overall]}`} />
           <div>
             <div className="font-display text-lg font-semibold">
-              {overall === "ok" ? "All systems normal" : overall === "degraded" ? "Partial degradation" : overall === "down" ? "Service disruption" : "Running checks…"}
+              {overall === "ok"
+                ? "All systems normal"
+                : overall === "degraded"
+                  ? "Partial degradation"
+                  : overall === "down"
+                    ? "Service disruption"
+                    : "Running checks…"}
             </div>
             <div className="text-xs text-muted-ink">Auto-refreshes every 60 seconds.</div>
           </div>
@@ -108,14 +133,24 @@ function StatusPage() {
       <Sec id="components" heading="2. Components">
         <ul className="space-y-2">
           {rows.map((r) => (
-            <li key={r.key} className="flex items-center justify-between gap-4 rounded-md border border-white/10 bg-white/[0.02] px-4 py-3">
+            <li
+              key={r.key}
+              className="flex items-center justify-between gap-4 rounded-md border border-white/10 bg-white/[0.02] px-4 py-3"
+            >
               <div className="min-w-0">
-                <div className="font-mono text-[12px] uppercase tracking-widest text-ink">{r.name}</div>
-                <div className="mt-0.5 truncate text-xs text-muted-ink">{r.desc}{r.note ? ` · ${r.note}` : ""}</div>
+                <div className="font-mono text-[12px] uppercase tracking-widest text-ink">
+                  {r.name}
+                </div>
+                <div className="mt-0.5 truncate text-xs text-muted-ink">
+                  {r.desc}
+                  {r.note ? ` · ${r.note}` : ""}
+                </div>
               </div>
               <div className="flex shrink-0 items-center gap-2">
                 <span className={`inline-block h-2.5 w-2.5 rounded-full ${DOT[r.state]}`} />
-                <span className="font-mono text-[10px] uppercase tracking-widest text-muted-ink">{LABEL[r.state]}</span>
+                <span className="font-mono text-[10px] uppercase tracking-widest text-muted-ink">
+                  {LABEL[r.state]}
+                </span>
               </div>
             </li>
           ))}
@@ -123,12 +158,19 @@ function StatusPage() {
       </Sec>
 
       <Sec id="incidents" heading="3. Incidents">
-        <p>No incidents reported. This page reflects live client-side probes of the auth and database endpoints; it does not replace a full status history.</p>
+        <p>
+          No incidents reported. This page reflects live client-side probes of the auth and database
+          endpoints; it does not replace a full status history.
+        </p>
       </Sec>
 
       <Sec id="contact" heading="4. Report an issue">
         <p>
-          Seeing something we're not? Email <a className="text-acid hover:underline" href="mailto:support@acidtest.dev">support@acidtest.dev</a> with a screenshot and the timestamp shown above.
+          Seeing something we're not? Email{" "}
+          <a className="text-acid hover:underline" href="mailto:support@acidtest.dev">
+            support@acidtest.dev
+          </a>{" "}
+          with a screenshot and the timestamp shown above.
         </p>
       </Sec>
     </LegalShell>

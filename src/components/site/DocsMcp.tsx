@@ -63,9 +63,9 @@ export function DocsMcp() {
           Model Context Protocol.
         </h2>
         <p className="mt-4 max-w-2xl text-muted-ink">
-          Expose AcidTest as a first-class tool to Claude, Cursor, Codex, and
-          any MCP client. Test synthesis becomes a callable — your agent
-          drafts stories, generates suites, and diagnoses failures inline.
+          Expose AcidTest as a first-class tool to Claude, Cursor, Codex, and any MCP client. Test
+          synthesis becomes a callable — your agent drafts stories, generates suites, and diagnoses
+          failures inline.
         </p>
       </div>
 

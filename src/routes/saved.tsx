@@ -2,15 +2,12 @@ import { createFileRoute, Link, useNavigate } from "@tanstack/react-router";
 import { useEffect, useState } from "react";
 import { useServerFn } from "@tanstack/react-start";
 import { toast } from "sonner";
-import { Trash2, Copy, Check, Bookmark } from "lucide-react";
+import { Trash2, Copy, Check, Bookmark, Github } from "lucide-react";
 import { PillNav } from "@/components/site/PillNav";
 import { Footer } from "@/components/site/FinalCta";
+import { GitHubExportDialog } from "@/components/site/GitHubExportDialog";
 import { useSession } from "@/hooks/use-session";
-import {
-  listSavedTests,
-  deleteSavedTest,
-  type SavedTest,
-} from "@/lib/saved-tests.functions";
+import { listSavedTests, deleteSavedTest, type SavedTest } from "@/lib/saved-tests.functions";
 
 export const Route = createFileRoute("/saved")({
   component: SavedPage,
@@ -31,6 +28,7 @@ function SavedPage() {
   const [items, setItems] = useState<SavedTest[] | null>(null);
   const [openId, setOpenId] = useState<string | null>(null);
   const [copiedId, setCopiedId] = useState<string | null>(null);
+  const [ghTest, setGhTest] = useState<SavedTest | null>(null);
 
   useEffect(() => {
     if (ready && !user) navigate({ to: "/login" });
@@ -131,6 +129,13 @@ function SavedPage() {
                         {copiedId === t.id ? "Copied" : "Copy"}
                       </button>
                       <button
+                        onClick={() => setGhTest(t)}
+                        className="inline-flex items-center gap-1 rounded border border-white/10 bg-white/[0.02] px-2 py-1.5 font-mono text-[10px] uppercase tracking-widest text-muted-ink transition-colors hover:border-acid/40 hover:text-acid"
+                        title="Push to GitHub"
+                      >
+                        <Github size={12} />
+                      </button>
+                      <button
                         onClick={() => handleDelete(t.id)}
                         className="inline-flex items-center gap-1 rounded border border-white/10 bg-white/[0.02] px-2 py-1.5 font-mono text-[10px] uppercase tracking-widest text-muted-ink transition-colors hover:border-red-400/40 hover:text-red-300"
                       >
@@ -149,6 +154,15 @@ function SavedPage() {
           </ul>
         )}
       </section>
+      {ghTest && (
+        <GitHubExportDialog
+          open={!!ghTest}
+          onClose={() => setGhTest(null)}
+          title={ghTest.title}
+          framework={ghTest.framework as import("@/components/site/generators").Framework}
+          code={ghTest.code}
+        />
+      )}
       <Footer />
     </main>
   );

@@ -64,17 +64,28 @@ export const generateWithUserKey = createServerFn({ method: "POST" })
   .handler(async ({ data, context }): Promise<{ code: string } | { error: string }> => {
     const { decryptUserKey } = await import("@/lib/user-key-crypto.server");
     const { supabase, userId } = context;
-    const { data: row, error } = await (supabase as unknown as {
-      from: (t: string) => {
-        select: (c: string) => {
-          eq: (col: string, v: string) => {
-            eq: (col: string, v: string) => {
-              maybeSingle: () => Promise<{ data: { key_ciphertext: string } | null; error: { message: string } | null }>;
+    const { data: row, error } = await (
+      supabase as unknown as {
+        from: (t: string) => {
+          select: (c: string) => {
+            eq: (
+              col: string,
+              v: string,
+            ) => {
+              eq: (
+                col: string,
+                v: string,
+              ) => {
+                maybeSingle: () => Promise<{
+                  data: { key_ciphertext: string } | null;
+                  error: { message: string } | null;
+                }>;
+              };
             };
           };
         };
-      };
-    })
+      }
+    )
       .from("user_api_keys")
       .select("key_ciphertext")
       .eq("user_id", userId)
