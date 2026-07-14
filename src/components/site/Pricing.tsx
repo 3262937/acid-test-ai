@@ -1,9 +1,6 @@
-import { Link, useNavigate } from "@tanstack/react-router";
+import { Link } from "@tanstack/react-router";
 import { useState } from "react";
-import { Check, Zap, X } from "lucide-react";
-import { useSession } from "@/hooks/use-session";
-import { isPaymentsConfigured } from "@/lib/stripe";
-import { StripeEmbeddedCheckoutInline } from "./StripeEmbeddedCheckout";
+import { Check, Zap } from "lucide-react";
 
 type Tier = {
   id: string;
@@ -67,27 +64,7 @@ const TOPUPS = [
 ];
 
 export function Pricing() {
-  const { user } = useSession();
-  const navigate = useNavigate();
   const [topup, setTopup] = useState(1);
-  const [checkoutPriceId, setCheckoutPriceId] = useState<string | null>(null);
-
-  function handleBuy(priceId: string) {
-    if (!user) {
-      navigate({ to: "/login" });
-      return;
-    }
-    if (!isPaymentsConfigured()) {
-      alert("Payments are not configured for this build yet.");
-      return;
-    }
-    setCheckoutPriceId(priceId);
-  }
-
-  const returnUrl =
-    typeof window !== "undefined"
-      ? `${window.location.origin}/success?session_id={CHECKOUT_SESSION_ID}`
-      : "/success?session_id={CHECKOUT_SESSION_ID}";
 
   return (
     <section id="pricing" className="relative mx-auto max-w-[1200px] px-6 py-24 md:py-32">
@@ -105,11 +82,10 @@ export function Pricing() {
         </div>
         <div className="folder-tab flex items-center gap-2 px-4 py-2 font-mono text-[11px] text-muted-ink">
           <Zap size={12} className="text-acid" />
-          <span className="uppercase tracking-widest">Credits never expire on paid plans</span>
+          <span className="uppercase tracking-widest">Billing coming soon — join the waitlist</span>
         </div>
       </div>
 
-      {/* Tier grid */}
       <div className="grid gap-6 md:grid-cols-3">
         {TIERS.map((t) => (
           <div
@@ -146,8 +122,8 @@ export function Pricing() {
               ))}
             </ul>
 
-            <button
-              onClick={() => handleBuy(t.id)}
+            <a
+              href="mailto:sales@acidtest.dev?subject=Waitlist%20-%20AcidTest%20Plan"
               className={[
                 "mt-8 inline-flex items-center justify-center rounded-md px-5 py-3 font-mono text-[11px] font-bold uppercase tracking-widest transition-all",
                 t.highlight
@@ -155,13 +131,12 @@ export function Pricing() {
                   : "border border-white/10 bg-white/[0.03] text-ink hover:border-acid/40 hover:text-acid",
               ].join(" ")}
             >
-              {user ? `Subscribe to ${t.name} →` : `Buy ${t.name} →`}
-            </button>
+              Join {t.name} waitlist →
+            </a>
           </div>
         ))}
       </div>
 
-      {/* Top-up strip */}
       <div className="folder-tab mt-10 flex flex-col gap-6 p-8 md:flex-row md:items-center md:justify-between">
         <div>
           <div className="label-mono mb-2 text-acid">Top-up</div>
@@ -189,12 +164,12 @@ export function Pricing() {
               </button>
             ))}
           </div>
-          <button
-            onClick={() => handleBuy(TOPUPS[topup].id)}
+          <Link
+            to="/login"
             className="inline-flex items-center justify-center rounded-md bg-acid px-5 py-3 font-mono text-[11px] font-bold uppercase tracking-widest text-[#0a0a0a] shadow-[0_0_24px_-4px_rgba(197,239,87,0.6)] transition-all hover:shadow-[0_0_40px_-2px_rgba(197,239,87,0.9)]"
           >
-            Add {TOPUPS[topup].credits.toLocaleString()} credits →
-          </button>
+            Get notified →
+          </Link>
         </div>
       </div>
 
@@ -204,33 +179,6 @@ export function Pricing() {
           sales@acidtest.dev
         </a>
       </p>
-
-      {/* Embedded checkout modal */}
-      {checkoutPriceId && (
-        <div
-          className="fixed inset-0 z-[100] flex items-center justify-center bg-black/80 p-4 backdrop-blur"
-          onClick={() => setCheckoutPriceId(null)}
-        >
-          <div
-            className="relative w-full max-w-[560px] rounded-xl border border-white/10 bg-carbon p-4"
-            onClick={(e) => e.stopPropagation()}
-          >
-            <button
-              onClick={() => setCheckoutPriceId(null)}
-              className="absolute right-3 top-3 z-10 flex h-8 w-8 items-center justify-center rounded-full bg-white/5 text-ink hover:bg-white/10"
-              aria-label="Close checkout"
-            >
-              <X size={16} />
-            </button>
-            <div className="max-h-[85vh] overflow-y-auto pt-6">
-              <StripeEmbeddedCheckoutInline
-                priceId={checkoutPriceId}
-                returnUrl={returnUrl}
-              />
-            </div>
-          </div>
-        </div>
-      )}
     </section>
   );
 }

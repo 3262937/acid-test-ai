@@ -2,11 +2,11 @@ import { useState } from "react";
 import { Link } from "@tanstack/react-router";
 import { useServerFn } from "@tanstack/react-start";
 import { toast } from "sonner";
+import { Bookmark } from "lucide-react";
 import { CodeTyper } from "./CodeTyper";
 import { generateCode, type Framework } from "./generators";
 import { useSession } from "@/hooks/use-session";
-import { useCredits } from "@/hooks/use-credits";
-import { debitCredit } from "@/lib/billing.functions";
+import { saveTest } from "@/lib/saved-tests.functions";
 
 const FRAMEWORKS: Framework[] = ["Playwright", "Cypress", "Selenium"];
 const DEFAULT_STORY =
@@ -14,46 +14,31 @@ const DEFAULT_STORY =
 
 export function LiveDemo() {
   const { user } = useSession();
-  const { refresh } = useCredits();
-  const debit = useServerFn(debitCredit);
+  const save = useServerFn(saveTest);
   const [story, setStory] = useState(DEFAULT_STORY);
   const [fw, setFw] = useState<Framework>("Playwright");
   const [runKey, setRunKey] = useState(0);
-  const [pending, setPending] = useState(false);
+  const [saving, setSaving] = useState(false);
   const code = generateCode(fw, story);
 
-  async function handleGenerate() {
-    // Anonymous demo: run without debit.
+  function handleGenerate() {
+    setRunKey((k) => k + 1);
+  }
+
+  async function handleSave() {
     if (!user) {
-      setRunKey((k) => k + 1);
+      toast.error("Sign in to save tests");
       return;
     }
-    setPending(true);
+    setSaving(true);
     try {
-      const res = await debit({ data: { amount: 1, reason: `demo:${fw.toLowerCase()}` } });
-      if ("error" in res) {
-        if (res.error === "insufficient_credits") {
-          toast.error("Out of credits", {
-            description: "Top up to keep generating tests.",
-            action: {
-              label: "Buy credits",
-              onClick: () => {
-                window.location.href = "/#pricing";
-              },
-            },
-          });
-        } else {
-          toast.error("Generate failed", { description: res.error });
-        }
-        return;
-      }
-      setRunKey((k) => k + 1);
-      void refresh();
-      toast.success("1 credit spent", {
-        description: `${res.balance.toLocaleString()} credits left`,
-      });
+      const title = story.trim().slice(0, 80) || `${fw} test`;
+      await save({ data: { title, story, framework: fw, code } });
+      toast.success("Saved", { description: "Find it under Saved tests." });
+    } catch (e) {
+      toast.error("Save failed", { description: (e as Error).message });
     } finally {
-      setPending(false);
+      setSaving(false);
     }
   }
 
@@ -70,7 +55,7 @@ export function LiveDemo() {
             <Link to="/login" className="text-acid hover:underline">
               Sign in
             </Link>{" "}
-            to save runs and spend credits.
+            to save your generated tests.
           </p>
         )}
       </div>
@@ -85,34 +70,40 @@ export function LiveDemo() {
             className="w-full resize-none rounded-md border border-white/10 bg-carbon/60 p-4 font-mono text-[13px] leading-relaxed text-ink outline-none focus:border-acid/50 focus:ring-2 focus:ring-acid/30"
           />
           <div className="mt-4 flex items-center justify-between">
-            <div className="label-mono">
-              {story.trim().split(/\s+/).length} tokens · {user ? "1 credit / run" : "free preview"}
-            </div>
+            <div className="label-mono">{story.trim().split(/\s+/).length} tokens</div>
             <button
               onClick={handleGenerate}
-              disabled={pending}
-              className="inline-flex items-center gap-2 rounded-md bg-acid px-5 py-3 font-mono text-[11px] font-bold uppercase tracking-widest text-[#0a0a0a] shadow-[0_0_24px_-4px_rgba(197,239,87,0.6)] transition-all hover:shadow-[0_0_40px_-2px_rgba(197,239,87,0.85)] disabled:opacity-50"
+              className="inline-flex items-center gap-2 rounded-md bg-acid px-5 py-3 font-mono text-[11px] font-bold uppercase tracking-widest text-[#0a0a0a] shadow-[0_0_24px_-4px_rgba(197,239,87,0.6)] transition-all hover:shadow-[0_0_40px_-2px_rgba(197,239,87,0.85)]"
             >
-              {pending ? "Running…" : "▶ Generate"}
+              ▶ Generate
             </button>
           </div>
         </div>
 
         <div>
-          <div className="mb-3 flex gap-1 rounded-md border border-white/6 bg-[rgba(16,17,18,0.72)] p-1 backdrop-blur">
-            {FRAMEWORKS.map((f) => (
-              <button
-                key={f}
-                onClick={() => setFw(f)}
-                className={`flex-1 rounded px-3 py-2 font-mono text-[11px] font-bold uppercase tracking-widest transition-colors ${
-                  fw === f
-                    ? "bg-acid text-[#0a0a0a]"
-                    : "text-muted-ink hover:text-ink"
-                }`}
-              >
-                {f}
-              </button>
-            ))}
+          <div className="mb-3 flex items-center gap-2">
+            <div className="flex flex-1 gap-1 rounded-md border border-white/6 bg-[rgba(16,17,18,0.72)] p-1 backdrop-blur">
+              {FRAMEWORKS.map((f) => (
+                <button
+                  key={f}
+                  onClick={() => setFw(f)}
+                  className={`flex-1 rounded px-3 py-2 font-mono text-[11px] font-bold uppercase tracking-widest transition-colors ${
+                    fw === f ? "bg-acid text-[#0a0a0a]" : "text-muted-ink hover:text-ink"
+                  }`}
+                >
+                  {f}
+                </button>
+              ))}
+            </div>
+            <button
+              onClick={handleSave}
+              disabled={saving}
+              className="inline-flex items-center gap-1.5 rounded-md border border-white/10 bg-white/[0.03] px-3 py-2 font-mono text-[11px] font-bold uppercase tracking-widest text-ink transition-all hover:border-acid/40 hover:text-acid disabled:opacity-50"
+              title={user ? "Save this test" : "Sign in to save"}
+            >
+              <Bookmark size={12} />
+              {saving ? "Saving…" : "Save"}
+            </button>
           </div>
           <CodeTyper
             key={`${fw}-${runKey}`}
