@@ -85,7 +85,9 @@ function Playground() {
         return;
       }
       if (!savedProviders.includes(engine)) {
-        toast.error(`No ${engine === "openai" ? "OpenAI" : "Claude"} key`, {
+        const label =
+          engine === "openai" ? "OpenAI" : engine === "anthropic" ? "Claude" : "NVIDIA NIM";
+        toast.error(`No ${label} key`, {
           description: "Add it in Account → Bring your own AI.",
           action: { label: "Account", onClick: () => navigate({ to: "/account" }) },
         });
