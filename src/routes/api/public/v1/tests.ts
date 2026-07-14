@@ -119,6 +119,12 @@ export const Route = createFileRoute("/api/public/v1/tests")({
       POST: async ({ request }) => {
         const auth = await authenticate(request);
         if (!auth.ok) return auth.response;
+        const rl = checkRateLimit(auth.key.id);
+        if (!rl.ok) {
+          void meter(auth.key, "POST /v1/tests", 429);
+          return rateLimitResponse(rl.retryAfter);
+        }
+
 
         let body: unknown;
         try {
