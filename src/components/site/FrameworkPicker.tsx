@@ -8,25 +8,22 @@ interface Props {
 
 export function FrameworkPicker({ value, onChange, className }: Props) {
   return (
-    <div className={`grid grid-cols-4 gap-1.5 ${className ?? ""}`}>
-      {FRAMEWORKS.map((f) => {
-        const active = value === f;
-        return (
-          <button
-            key={f}
-            type="button"
-            onClick={() => onChange(f)}
-            title={`${f} · ${FRAMEWORK_META[f].lang}`}
-            className={`rounded-md border px-1.5 py-1.5 font-mono text-[10px] uppercase tracking-wider transition-all ${
-              active
-                ? "border-acid/60 bg-acid/10 text-acid"
-                : "border-white/10 bg-white/[0.02] text-muted-ink hover:text-ink"
-            }`}
-          >
-            {FRAMEWORK_META[f].short}
-          </button>
-        );
-      })}
+    <div className={`relative ${className ?? ""}`}>
+      <label className="label-mono mb-1.5 block text-muted-ink">Framework</label>
+      <select
+        value={value}
+        onChange={(e) => onChange(e.target.value as Framework)}
+        className="w-full appearance-none rounded-md border border-white/10 bg-carbon/60 px-3 py-2.5 pr-9 font-mono text-[12px] uppercase tracking-wider text-acid outline-none transition-colors hover:border-acid/40 focus:border-acid/60 focus:ring-2 focus:ring-acid/30"
+      >
+        {FRAMEWORKS.map((f) => (
+          <option key={f} value={f} className="bg-carbon text-ink">
+            {FRAMEWORK_META[f].short} · {FRAMEWORK_META[f].lang}
+          </option>
+        ))}
+      </select>
+      <span className="pointer-events-none absolute right-3 top-[34px] font-mono text-[10px] text-acid">
+        ▾
+      </span>
     </div>
   );
 }
