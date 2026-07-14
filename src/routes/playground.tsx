@@ -389,7 +389,7 @@ function Playground() {
                     ? user
                       ? "Each generation costs 1 credit."
                       : "1 free preview, then sign in."
-                    : `Runs on your ${engine === "openai" ? "OpenAI" : "Claude"} key.`}
+                    : `Runs on your ${engine === "openai" ? "OpenAI" : engine === "anthropic" ? "Claude" : "NVIDIA NIM"} key.`}
                 </p>
               </div>
             )}
