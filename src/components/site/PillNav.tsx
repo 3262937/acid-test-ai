@@ -1,8 +1,7 @@
 import { Link, useNavigate } from "@tanstack/react-router";
 import { useState } from "react";
-import { LogOut, Zap } from "lucide-react";
+import { LogOut, Bookmark } from "lucide-react";
 import { useSession } from "@/hooks/use-session";
-import { useCredits } from "@/hooks/use-credits";
 import { supabase } from "@/integrations/supabase/client";
 
 const links: { label: string; to: string; hash?: string }[] = [
@@ -21,7 +20,6 @@ function initials(email?: string | null) {
 
 export function PillNav() {
   const { user } = useSession();
-  const { balance } = useCredits();
   const navigate = useNavigate();
   const [open, setOpen] = useState(false);
 
@@ -31,22 +29,19 @@ export function PillNav() {
     navigate({ to: "/" });
   }
 
-
   return (
     <div className="fixed top-6 left-1/2 z-50 w-[min(1200px,calc(100%-32px))] -translate-x-1/2">
-      <nav className="flex items-center justify-between rounded-full border border-white/6 bg-[rgba(16,17,18,0.72)] px-3 py-2 backdrop-blur-xl">
-        <Link to="/" className="pl-4 pr-2">
-          <span className="text-acid font-display text-xl font-bold italic tracking-tight">
-            AcidTest
-          </span>
+      <nav className="flex items-center justify-between rounded-full border border-white/6 bg-[rgba(16,17,18,0.72)] px-3 py-2 backdrop-blur">
+        <Link to="/" className="pl-3 pr-2 font-display text-[15px] font-bold tracking-tight">
+          Acid<span className="text-acid">·</span>Test
         </Link>
-        <div className="hidden items-center gap-8 md:flex">
+        <div className="hidden items-center gap-1 md:flex">
           {links.map((l) => (
             <Link
               key={l.label}
               to={l.to}
               hash={l.hash}
-              className="label-mono text-[11px] transition-colors hover:text-acid"
+              className="rounded-full px-3 py-1.5 font-mono text-[11px] uppercase tracking-widest text-muted-ink transition-colors hover:text-acid"
             >
               {l.label}
             </Link>
@@ -55,13 +50,11 @@ export function PillNav() {
         {user ? (
           <div className="flex items-center gap-2">
             <Link
-              to="/"
-              hash="pricing"
-              className="hidden md:inline-flex items-center gap-1.5 rounded-full border border-acid/30 bg-acid/10 px-3 py-1.5 font-mono text-[11px] font-semibold text-acid transition-all hover:bg-acid/20 hover:shadow-[0_0_16px_-4px_rgba(197,239,87,0.6)]"
-              title="Credits balance — click to buy more"
+              to="/saved"
+              className="hidden md:inline-flex items-center gap-1.5 rounded-full border border-white/10 bg-white/[0.03] px-3 py-1.5 font-mono text-[11px] font-semibold text-ink transition-all hover:border-acid/40 hover:text-acid"
             >
-              <Zap size={12} />
-              {balance === null ? "—" : balance.toLocaleString()}
+              <Bookmark size={12} />
+              Saved
             </Link>
             <div className="relative">
               <button
@@ -76,10 +69,14 @@ export function PillNav() {
                   <div className="border-b border-white/5 px-3 py-2 font-mono text-[11px] text-muted-ink">
                     {user.email}
                   </div>
-                  <div className="border-b border-white/5 px-3 py-2 font-mono text-[11px] text-acid">
-                    <Zap size={10} className="mr-1 inline" />
-                    {balance === null ? "—" : balance.toLocaleString()} credits
-                  </div>
+                  <Link
+                    to="/saved"
+                    onClick={() => setOpen(false)}
+                    className="mt-1 flex w-full items-center gap-2 rounded px-3 py-2 font-mono text-[11px] uppercase tracking-widest text-ink transition-colors hover:bg-white/5 hover:text-acid"
+                  >
+                    <Bookmark size={12} />
+                    Saved tests
+                  </Link>
                   <button
                     onClick={signOut}
                     className="mt-1 flex w-full items-center gap-2 rounded px-3 py-2 font-mono text-[11px] uppercase tracking-widest text-ink transition-colors hover:bg-white/5 hover:text-acid"
