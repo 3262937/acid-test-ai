@@ -1,1 +1,7 @@
 project_id = "pxuybtcbkesyuebghaae"
+
+[functions.rag-retrieve]
+verify_jwt = false
+
+[functions.ingest-kb]
+verify_jwt = false

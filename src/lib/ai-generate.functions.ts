@@ -4,11 +4,20 @@ import type { Provider } from "@/lib/user-keys.functions";
 
 import { FRAMEWORKS, type Framework } from "@/components/site/generators";
 
-function buildPrompt(story: string, framework: Framework) {
+function buildPrompt(story: string, framework: Framework, ragContext?: string) {
+  const rag =
+    ragContext && ragContext.trim().length > 0
+      ? `--- RETRIEVED TEST PATTERNS (reference only) ---
+${ragContext}
+------------------------------------------------
+Use these proven patterns as guidance for coverage (happy path, negative, edge, security); do not copy them verbatim.
+
+`
+      : "";
   return `You are a senior QA engineer. Generate a runnable ${framework} test suite in the framework's native language for the following user story.
 Return ONLY the code, no markdown fences, no commentary.
 
-USER STORY:
+${rag}USER STORY:
 ${story}
 
 Requirements:
@@ -113,7 +122,24 @@ export const generateWithUserKey = createServerFn({ method: "POST" })
 
     try {
       const apiKey = decryptUserKey(row.key_ciphertext);
-      const prompt = buildPrompt(data.story, data.framework);
+
+      let ragContext: string | undefined;
+      try {
+        const { supabaseAdmin } = await import("@/integrations/supabase/client.server");
+        const { data: ragData } = await supabaseAdmin.functions.invoke("rag-retrieve", {
+          body: { query: data.story, k: 5 },
+        });
+        const chunks = (ragData as { chunks?: { content: string }[] } | null)?.chunks ?? [];
+        if (chunks.length > 0) {
+          ragContext = chunks.map((c, i) => `[${i + 1}] ${c.content}`).join("\n\n");
+        }
+      } catch {
+        ragContext = undefined;
+      }
+
+      const prompt = ragContext
+        ? buildPrompt(data.story, data.framework, ragContext)
+        : buildPrompt(data.story, data.framework);
       const code =
         data.provider === "openai"
           ? await callOpenAI(apiKey, prompt)
