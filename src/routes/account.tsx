@@ -663,8 +663,8 @@ function CustomRagPanel() {
   const [uploading, setUploading] = useState(false);
   const [progress, setProgress] = useState<string>("");
 
-  const filesInputRef = useState<HTMLInputElement | null>(null);
-  const folderInputRef = useState<HTMLInputElement | null>(null);
+  const filesInputRef = useRef<HTMLInputElement | null>(null);
+  const folderInputRef = useRef<HTMLInputElement | null>(null);
 
   const refresh = useCallback(async () => {
     try {
