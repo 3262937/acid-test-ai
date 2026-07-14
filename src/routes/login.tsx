@@ -133,7 +133,14 @@ function LoginPage() {
             </div>
           )}
 
-          <div className="mt-6 flex flex-col gap-3">
+          <div className="mt-6 rounded-md border border-amber-400/20 bg-amber-400/[0.06] px-3 py-2.5">
+            <p className="font-mono text-[12px] leading-relaxed text-amber-200/90">
+              <span className="font-semibold text-amber-200">GitHub sign-in is temporarily unavailable.</span>{" "}
+              It will be re-enabled after migrating this project from Lovable Cloud to a self-managed Supabase instance. Google sign-in works normally.
+            </p>
+          </div>
+
+          <div className="mt-4 flex flex-col gap-3">
             <button
               onClick={google}
               disabled={!!busy}
@@ -144,15 +151,10 @@ function LoginPage() {
             </button>
 
             <button
-              onClick={github}
-              disabled={!!busy}
-              className="inline-flex items-center justify-center gap-3 rounded-md border border-white/10 bg-white/[0.03] px-4 py-3 font-mono text-[12px] font-semibold uppercase tracking-widest text-ink transition-all hover:border-acid/40 hover:bg-white/[0.05] disabled:opacity-50"
+              disabled
+              className="inline-flex cursor-not-allowed items-center justify-center gap-3 rounded-md border border-white/10 bg-white/[0.03] px-4 py-3 font-mono text-[12px] font-semibold uppercase tracking-widest text-muted-ink opacity-50"
             >
-              {busy === "github" ? (
-                <Loader2 size={14} className="animate-spin" />
-              ) : (
-                <Github size={16} />
-              )}
+              <Github size={16} />
               Continue with GitHub
             </button>
           </div>
