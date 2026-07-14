@@ -1,5 +1,6 @@
 import { useMemo, useRef, useState } from "react";
-import { CheckCircle2, XCircle, Shield } from "lucide-react";
+import { CheckCircle2, XCircle, Shield, Upload } from "lucide-react";
+import { toast } from "sonner";
 
 type Verdict = { id: string; title: string; status: "PASS" | "FAIL"; ms: number };
 type LogLine = { t: string; msg: string; tone?: "acid" | "warn" | "muted" };
