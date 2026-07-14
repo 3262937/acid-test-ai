@@ -1,16 +1,17 @@
-import { useState } from "react";
+import { useRef, useState } from "react";
 import { Link, useNavigate } from "@tanstack/react-router";
 import { useServerFn } from "@tanstack/react-start";
 import { toast } from "sonner";
-import { Bookmark, Zap } from "lucide-react";
+import { Bookmark, Upload, Zap } from "lucide-react";
 import { CodeTyper } from "./CodeTyper";
 import { BuyCreditsDialog } from "./BuyCreditsDialog";
-import { generateCode, type Framework } from "./generators";
+import { generateCode, FRAMEWORK_META, type Framework } from "./generators";
+import { FrameworkPicker } from "./FrameworkPicker";
 import { useSession } from "@/hooks/use-session";
 import { useCredits } from "@/hooks/use-credits";
 import { saveTest } from "@/lib/saved-tests.functions";
+import { parseUploadedFile } from "@/lib/ai-generate.functions";
 
-const FRAMEWORKS: Framework[] = ["Playwright", "Cypress", "Selenium"];
 const DEFAULT_STORY =
   "As a registered user, I want to reset my password via email link, so that I can regain access to my account.";
 const FREE_TRY_KEY = "acidtest_free_try_used";
@@ -20,13 +21,58 @@ export function LiveDemo() {
   const navigate = useNavigate();
   const { balance, consume, refresh } = useCredits();
   const save = useServerFn(saveTest);
+  const parseFile = useServerFn(parseUploadedFile);
   const [story, setStory] = useState(DEFAULT_STORY);
   const [fw, setFw] = useState<Framework>("Playwright");
   const [runKey, setRunKey] = useState(0);
   const [saving, setSaving] = useState(false);
+  const [uploading, setUploading] = useState(false);
   const [revealed, setRevealed] = useState(false);
   const [buyOpen, setBuyOpen] = useState(false);
+  const fileRef = useRef<HTMLInputElement>(null);
   const code = generateCode(fw, story);
+
+  async function handleFile(e: React.ChangeEvent<HTMLInputElement>) {
+    const file = e.target.files?.[0];
+    e.target.value = "";
+    if (!file) return;
+    if (!user) {
+      toast.error("Sign in to upload documents");
+      return;
+    }
+    if (file.size > 5 * 1024 * 1024) {
+      toast.error("File too large", { description: "Max 5 MB." });
+      return;
+    }
+    setUploading(true);
+    try {
+      const buf = await file.arrayBuffer();
+      const bytes = new Uint8Array(buf);
+      let bin = "";
+      const chunk = 0x8000;
+      for (let i = 0; i < bytes.length; i += chunk) {
+        bin += String.fromCharCode.apply(null, Array.from(bytes.subarray(i, i + chunk)));
+      }
+      const base64 = btoa(bin);
+      const res = await parseFile({ data: { filename: file.name, base64 } });
+      if ("error" in res) {
+        toast.error("Parse failed", { description: res.error });
+        return;
+      }
+      const clean = res.text.trim();
+      if (!clean) {
+        toast.error("Empty document");
+        return;
+      }
+      setStory(clean.slice(0, 4000));
+      toast.success("Loaded", { description: `${file.name} → user story` });
+    } catch (err) {
+      toast.error("Upload failed", { description: (err as Error).message });
+    } finally {
+      setUploading(false);
+    }
+  }
+
 
   async function handleGenerate() {
     if (!user) {
@@ -107,13 +153,33 @@ export function LiveDemo() {
 
         <div className="grid grid-cols-1 gap-6 lg:grid-cols-2">
           <div className="folder-tab p-6 pt-8">
-            <label className="label-mono mb-3 block text-acid">User Story · Input</label>
+            <div className="mb-3 flex items-center justify-between">
+              <label className="label-mono block text-acid">User Story · Input</label>
+              <button
+                type="button"
+                onClick={() => fileRef.current?.click()}
+                disabled={uploading}
+                className="inline-flex items-center gap-1 rounded-md border border-white/10 bg-white/[0.03] px-2 py-1 font-mono text-[10px] uppercase tracking-widest text-muted-ink transition-all hover:border-acid/40 hover:text-acid disabled:opacity-50"
+                title="Upload .docx / .xlsx / .csv / .txt"
+              >
+                <Upload size={11} />
+                {uploading ? "Parsing…" : "Upload doc"}
+              </button>
+              <input
+                ref={fileRef}
+                type="file"
+                accept=".txt,.md,.docx,.xlsx,.xls,.csv"
+                onChange={handleFile}
+                className="hidden"
+              />
+            </div>
             <textarea
               value={story}
               onChange={(e) => setStory(e.target.value)}
               rows={7}
               className="w-full resize-none rounded-md border border-white/10 bg-carbon/60 p-4 font-mono text-[13px] leading-relaxed text-ink outline-none focus:border-acid/50 focus:ring-2 focus:ring-acid/30"
             />
+
             <div className="mt-4 flex items-center justify-between">
               <div className="label-mono">{story.trim().split(/\s+/).length} tokens</div>
               <button
@@ -126,19 +192,9 @@ export function LiveDemo() {
           </div>
 
           <div>
-            <div className="mb-3 flex items-center gap-2">
-              <div className="flex flex-1 gap-1 rounded-md border border-white/6 bg-[rgba(16,17,18,0.72)] p-1 backdrop-blur">
-                {FRAMEWORKS.map((f) => (
-                  <button
-                    key={f}
-                    onClick={() => setFw(f)}
-                    className={`flex-1 rounded px-3 py-2 font-mono text-[11px] font-bold uppercase tracking-widest transition-colors ${
-                      fw === f ? "bg-acid text-[#0a0a0a]" : "text-muted-ink hover:text-ink"
-                    }`}
-                  >
-                    {f}
-                  </button>
-                ))}
+            <div className="mb-3 flex items-start gap-2">
+              <div className="flex-1">
+                <FrameworkPicker value={fw} onChange={setFw} />
               </div>
               <button
                 onClick={handleSave}
@@ -154,7 +210,7 @@ export function LiveDemo() {
               <CodeTyper
                 key={`${fw}-${runKey}`}
                 code={code}
-                filename={`password-reset.${fw === "Playwright" ? "spec.ts" : fw === "Cypress" ? "cy.ts" : "test.ts"}`}
+                filename={`password-reset.${FRAMEWORK_META[fw].ext}`}
               />
             ) : (
               <div className="folder-tab-solid flex h-[440px] flex-col items-center justify-center gap-3 p-6 text-center">

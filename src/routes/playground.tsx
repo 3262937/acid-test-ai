@@ -8,15 +8,14 @@ import { PillNav } from "@/components/site/PillNav";
 import { Footer } from "@/components/site/FinalCta";
 import { CodeTyper } from "@/components/site/CodeTyper";
 import { BuyCreditsDialog } from "@/components/site/BuyCreditsDialog";
-import { generateCode, type Framework } from "@/components/site/generators";
+import { generateCode, FRAMEWORK_META, type Framework } from "@/components/site/generators";
+import { FrameworkPicker } from "@/components/site/FrameworkPicker";
 import { useSession } from "@/hooks/use-session";
 import { useCredits } from "@/hooks/use-credits";
 import { saveTest } from "@/lib/saved-tests.functions";
 import { listUserKeys, type Provider } from "@/lib/user-keys.functions";
 import { generateWithUserKey, parseUploadedFile } from "@/lib/ai-generate.functions";
 
-const ALL: Framework[] = ["Playwright", "Cypress", "Selenium"];
-const EXTRA = ["Jest", "Vitest", "Mocha", "Puppeteer", "Appium"];
 const FREE_TRY_KEY = "acidtest_free_try_used";
 
 type Engine = "lovable" | "openai" | "anthropic";
@@ -292,18 +291,10 @@ function Playground() {
             </p>
 
             <label className="label-mono block text-acid">Framework</label>
-            <select
-              value={fw}
-              onChange={(e) => setFw(e.target.value as Framework)}
-              className="w-full rounded-md border border-white/10 bg-carbon/60 p-3 font-mono text-[13px] text-ink outline-none focus:border-acid/50"
-            >
-              {ALL.map((f) => (
-                <option key={f} value={f}>{f}</option>
-              ))}
-              {EXTRA.map((f) => (
-                <option key={f} value={f} disabled>{f} (soon)</option>
-              ))}
-            </select>
+            <FrameworkPicker value={fw} onChange={setFw} />
+            <p className="font-mono text-[10px] text-muted-ink">
+              {FRAMEWORK_META[fw].lang} · .{FRAMEWORK_META[fw].ext}
+            </p>
             <button
               onClick={run}
               disabled={generating}
@@ -352,7 +343,7 @@ function Playground() {
                 <CodeTyper
                   key={`${fw}-${runKey}`}
                   code={generatedCode || generateCode(fw, story)}
-                  filename={`generated.${fw.toLowerCase()}.ts`}
+                  filename={`generated.${FRAMEWORK_META[fw].ext}`}
                 />
               </>
             ) : (

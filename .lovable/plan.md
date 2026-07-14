@@ -1,65 +1,48 @@
-# AcidTest — Logo consistency + UX polish
 
-## What I found
+## Scope
 
-### 1. Logo is inconsistent
-Three different treatments in the app right now:
+1. **LiveDemo (`src/components/site/LiveDemo.tsx`)** — add an "Upload doc" button next to the story input, mirroring Playground behaviour (sign-in required, 5 MB cap, reuses existing `parseUploadedFile` server fn). Replace the 3-tab framework switcher with the same 16-framework picker used on Playground.
 
-| Location | Current | |
-|---|---|---|
-| Top nav (`PillNav.tsx`) | `Acid·Test` — bold, no italic, dot separator, plain ink color | ❌ off-brand |
-| Login page (`login.tsx:110`) | `AcidTest` — italic, acid-green | ✅ matches your reference |
-| Footer (`FinalCta.tsx:30`) | `AcidTest` — italic, acid-green | ✅ matches |
-| 404 page | no wordmark | — |
+2. **Playground (`src/routes/playground.tsx`)** — replace the current `<select>` (3 active + 5 disabled) with the full 16-framework picker.
 
-Your uploaded screenshot confirms the italic acid-green `AcidTest` is the intended mark.
+3. **Framework catalog (`src/components/site/generators.ts`)** — extend `Framework` type + `generateCode()` to cover all 16 targets. Each generator emits a minimal, syntactically-correct stub in the target language so `CodeTyper` renders it and BYO/Lovable generation prompts can request the same framework by name.
 
-### 2. Smooth-UX issues worth fixing in the same pass
-- No global smooth-scroll for the `#protocol` / `#pricing` hash links used by PillNav → jumps abruptly.
-- Nav lacks a scrolled state (background stays the same translucency → hard to read over bright hero glow when scrolled).
-- No shared `<Logo>` component, so any future tweak forces edits in 3 files (root cause of the drift).
-- Focus rings missing on the round avatar button and pill nav links → keyboard users get no feedback.
-- Reduced-motion is respected in Hero but not in `CodeTyper` scroll interval / marquee → good to align.
+## The 16 frameworks (Multi-language QA set)
 
-### 3. Remaining functional work still open from earlier turns
-- GitHub OAuth: `/login` correctly disables the button and shows the amber banner, but there's no follow-up task tracked. Not code-actionable until you migrate — leave as-is.
-- API keys + rate limit: shipped. No known gaps.
-- No sitemap.xml / robots.txt yet (SEO polish, optional).
+| # | Label | Language | File ext |
+|---|---|---|---|
+| 1 | Playwright | TypeScript | `.spec.ts` |
+| 2 | Cypress | TypeScript | `.cy.ts` |
+| 3 | Selenium (Java) | Java | `.java` |
+| 4 | Selenium (Python) | Python / pytest | `.py` |
+| 5 | Selenium (C#) | C# / NUnit | `.cs` |
+| 6 | Puppeteer | TypeScript | `.test.ts` |
+| 7 | WebdriverIO | TypeScript | `.e2e.ts` |
+| 8 | Appium | JavaScript | `.test.js` |
+| 9 | Espresso | Kotlin | `.kt` |
+| 10 | XCUITest | Swift | `.swift` |
+| 11 | RestAssured | Java | `.java` |
+| 12 | Postman | JSON collection | `.json` |
+| 13 | Robot Framework | Robot | `.robot` |
+| 14 | Cucumber | Gherkin | `.feature` |
+| 15 | JUnit | Java | `.java` |
+| 16 | TestNG | Java | `.xml` + Java |
 
-## Plan
+## UI approach
 
-### Step 1 — Create a single source of truth for the wordmark
-New file `src/components/site/Logo.tsx`:
+- **Framework picker**: compact 4×4 grid of pill buttons (mono, uppercase, `text-[10px]`) styled like the existing Engine toggle. Selected pill uses `border-acid/60 bg-acid/10 text-acid`. Fits both LiveDemo and Playground layouts without breaking the folder-tab visual.
+- **CodeTyper filename**: derive extension from a small `FRAMEWORK_META` map so the tab shows `generated.playwright.spec.ts`, `generated.selenium-python.py`, `generated.jira.feature`, etc.
+- **BYO prompt**: `buildPrompt()` in `ai-generate.functions.ts` already interpolates the framework name — pass the full label (e.g. "Selenium (Python / pytest)") so the LLM produces the right language.
 
-```tsx
-// Renders the canonical italic acid-green AcidTest wordmark.
-// size: "sm" (nav ~15px), "md" (login ~24px), "lg" (footer ~18px)
-export function Logo({ size = "sm" }: { size?: "sm" | "md" | "lg" }) { … }
-```
+## Files to touch
 
-Uses `font-display font-bold italic text-acid tracking-tight` with size-driven `text-*` class. Wrapped in a `<span>` so callers control the surrounding `<Link>`.
+- `src/components/site/generators.ts` — expand `Framework` union, add `FRAMEWORK_META` (label, ext, language), add 16 stub generators.
+- `src/components/site/LiveDemo.tsx` — add upload button + hidden file input (reuses `parseUploadedFile` + `useSession`), swap 3-tab bar for 16-item pill grid.
+- `src/routes/playground.tsx` — replace `<select>` with the same pill-grid component (extract shared `FrameworkPicker` into `src/components/site/FrameworkPicker.tsx`).
+- `src/lib/ai-generate.functions.ts` — widen `Framework` validator to accept all 16 labels.
 
-### Step 2 — Swap the three call sites to `<Logo>`
-- `PillNav.tsx:42-44` → `<Link to="/"><Logo size="sm" /></Link>`
-- `routes/login.tsx:109-113` → `<Link to="/"><Logo size="md" /></Link>`
-- `FinalCta.tsx:30` → `<Logo size="lg" />`
+## Not in scope
 
-Result: every wordmark is italic acid-green `AcidTest`, matching your screenshot.
-
-### Step 3 — Smooth-UX polish (small, presentation-only)
-- `src/styles.css`: add `html { scroll-behavior: smooth; }` inside a `@media (prefers-reduced-motion: no-preference)` block so hash-link jumps glide.
-- `PillNav.tsx`: add a `scrolled` state via `useEffect` + `scrollY > 24`, toggling a denser background class (`bg-[rgba(10,10,11,0.9)]` + a hairline border) for readability over the hero.
-- Add `focus-visible:outline focus-visible:outline-2 focus-visible:outline-acid/60 focus-visible:outline-offset-2` to the avatar button and the pill nav links.
-
-### Step 4 — Verify
-- `bunx tsgo --noEmit`
-- Playwright screenshot of `/`, `/login`, `/account` at 1280×1800 to confirm the wordmark is identical everywhere and the nav densifies on scroll.
-
-## Out of scope (call out, don't do)
-- GitHub OAuth wiring — blocked on your Supabase migration; the amber banner already communicates this.
-- Sitemap/robots, favicon variants — separate SEO task if you want it later.
-- Any backend / rate-limit changes — feature is already shipped.
-
-## Files touched
-- **New**: `src/components/site/Logo.tsx`
-- **Edit**: `src/components/site/PillNav.tsx`, `src/components/site/FinalCta.tsx`, `src/routes/login.tsx`, `src/styles.css`
+- No new DB tables, no new server routes, no auth changes.
+- Jira ticket creation stays as previously scoped (separate follow-up).
+- Anonymous upload stays disabled per your answer.
