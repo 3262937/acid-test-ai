@@ -265,7 +265,11 @@ export function ThreatDetection() {
               />
               <span className="label-mono">{framework}</span>
             </div>
+          </div>
+
+          {tab === "generated" ? (
             <pre className="max-h-[420px] overflow-auto rounded-md border border-white/5 bg-carbon/60 p-4 font-mono text-[12.5px] leading-[1.7] text-ink/85">
+
               <code>{DEFAULT_GENERATED}</code>
             </pre>
           ) : (
