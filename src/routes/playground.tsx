@@ -19,7 +19,7 @@ import { generateWithUserKey, parseUploadedFile } from "@/lib/ai-generate.functi
 
 const FREE_TRY_KEY = "acidtest_free_try_used";
 
-type Engine = "lovable" | "openai" | "anthropic";
+type Engine = "lovable" | "openai" | "anthropic" | "nvidia";
 
 export const Route = createFileRoute("/playground")({
   component: Playground,
@@ -85,7 +85,9 @@ function Playground() {
         return;
       }
       if (!savedProviders.includes(engine)) {
-        toast.error(`No ${engine === "openai" ? "OpenAI" : "Claude"} key`, {
+        const label =
+          engine === "openai" ? "OpenAI" : engine === "anthropic" ? "Claude" : "NVIDIA NIM";
+        toast.error(`No ${label} key`, {
           description: "Add it in Account → Bring your own AI.",
           action: { label: "Account", onClick: () => navigate({ to: "/account" }) },
         });
@@ -258,11 +260,18 @@ function Playground() {
             />
 
             <label className="label-mono block text-acid">Engine</label>
-            <div className="grid grid-cols-3 gap-2">
-              {(["lovable", "openai", "anthropic"] as Engine[]).map((e) => {
+            <div className="grid grid-cols-2 gap-2 sm:grid-cols-4">
+              {(["lovable", "openai", "anthropic", "nvidia"] as Engine[]).map((e) => {
                 const disabled =
                   e !== "lovable" && (!user || !savedProviders.includes(e as Provider));
-                const label = e === "lovable" ? "Credits" : e === "openai" ? "OpenAI" : "Claude";
+                const label =
+                  e === "lovable"
+                    ? "Credits"
+                    : e === "openai"
+                      ? "OpenAI"
+                      : e === "anthropic"
+                        ? "Claude"
+                        : "NVIDIA (free)";
                 return (
                   <button
                     key={e}
@@ -290,8 +299,11 @@ function Playground() {
             <p className="font-mono text-[10px] text-muted-ink">
               {engine === "lovable"
                 ? "Uses 1 credit per generation."
-                : "Runs on your key — no credit charged."}
+                : engine === "nvidia"
+                  ? "Runs on your free NVIDIA NIM key — no credit charged."
+                  : "Runs on your key — no credit charged."}
             </p>
+
 
             <label className="label-mono block text-acid">Framework</label>
             <FrameworkPicker value={fw} onChange={setFw} />
@@ -308,7 +320,7 @@ function Playground() {
                 ? "Generating…"
                 : engine === "lovable"
                   ? "Generate suite (1 credit)"
-                  : `Generate with ${engine === "openai" ? "OpenAI" : "Claude"}`}
+                  : `Generate with ${engine === "openai" ? "OpenAI" : engine === "anthropic" ? "Claude" : "NVIDIA NIM"}`}
             </button>
             <button
               onClick={handleSave}
@@ -377,7 +389,7 @@ function Playground() {
                     ? user
                       ? "Each generation costs 1 credit."
                       : "1 free preview, then sign in."
-                    : `Runs on your ${engine === "openai" ? "OpenAI" : "Claude"} key.`}
+                    : `Runs on your ${engine === "openai" ? "OpenAI" : engine === "anthropic" ? "Claude" : "NVIDIA NIM"} key.`}
                 </p>
               </div>
             )}
