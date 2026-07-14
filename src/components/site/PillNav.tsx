@@ -1,9 +1,10 @@
 import { Link, useNavigate } from "@tanstack/react-router";
-import { useState } from "react";
+import { useEffect, useState } from "react";
 import { LogOut, Bookmark, User as UserIcon } from "lucide-react";
 import { useSession } from "@/hooks/use-session";
 import { useProfile } from "@/hooks/use-profile";
 import { supabase } from "@/integrations/supabase/client";
+import { Logo } from "./Logo";
 
 const links: { label: string; to: string; hash?: string }[] = [
   { label: "Product", to: "/" },
@@ -25,6 +26,14 @@ export function PillNav() {
   const { profile } = useProfile();
   const navigate = useNavigate();
   const [open, setOpen] = useState(false);
+  const [scrolled, setScrolled] = useState(false);
+
+  useEffect(() => {
+    const onScroll = () => setScrolled(window.scrollY > 24);
+    onScroll();
+    window.addEventListener("scroll", onScroll, { passive: true });
+    return () => window.removeEventListener("scroll", onScroll);
+  }, []);
 
   async function signOut() {
     setOpen(false);
@@ -38,9 +47,18 @@ export function PillNav() {
 
   return (
     <div className="fixed top-6 left-1/2 z-50 w-[min(1200px,calc(100%-32px))] -translate-x-1/2">
-      <nav className="flex items-center justify-between rounded-full border border-white/6 bg-[rgba(16,17,18,0.72)] px-3 py-2 backdrop-blur">
-        <Link to="/" className="pl-3 pr-2 font-display text-[15px] font-bold tracking-tight">
-          Acid<span className="text-acid">·</span>Test
+      <nav
+        className={`flex items-center justify-between rounded-full border px-3 py-2 backdrop-blur transition-all duration-300 ${
+          scrolled
+            ? "border-white/10 bg-[rgba(10,10,11,0.9)] shadow-[0_10px_30px_-15px_rgba(0,0,0,0.6)]"
+            : "border-white/6 bg-[rgba(16,17,18,0.72)]"
+        }`}
+      >
+        <Link
+          to="/"
+          className="pl-3 pr-2 rounded-full focus-visible:outline focus-visible:outline-2 focus-visible:outline-acid/60 focus-visible:outline-offset-2"
+        >
+          <Logo size="sm" />
         </Link>
         <div className="hidden items-center gap-1 md:flex">
           {links.map((l) => (

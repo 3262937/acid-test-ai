@@ -4,6 +4,7 @@ import { Github, Loader2, Mail } from "lucide-react";
 import { lovable } from "@/integrations/lovable/index";
 import { supabase } from "@/integrations/supabase/client";
 import { useSession } from "@/hooks/use-session";
+import { Logo } from "@/components/site/Logo";
 
 export const Route = createFileRoute("/login")({
   component: LoginPage,
