@@ -20,6 +20,7 @@ import { Route as DocsRouteImport } from './routes/docs'
 import { Route as AccountRouteImport } from './routes/account'
 import { Route as IndexRouteImport } from './routes/index'
 import { Route as ApiPublicV1TestsRouteImport } from './routes/api/public/v1/tests'
+import { Route as ApiPublicPaymentsWebhookRouteImport } from './routes/api/public/payments/webhook'
 
 const TermsRoute = TermsRouteImport.update({
   id: '/terms',
@@ -76,6 +77,12 @@ const ApiPublicV1TestsRoute = ApiPublicV1TestsRouteImport.update({
   path: '/api/public/v1/tests',
   getParentRoute: () => rootRouteImport,
 } as any)
+const ApiPublicPaymentsWebhookRoute =
+  ApiPublicPaymentsWebhookRouteImport.update({
+    id: '/api/public/payments/webhook',
+    path: '/api/public/payments/webhook',
+    getParentRoute: () => rootRouteImport,
+  } as any)
 
 export interface FileRoutesByFullPath {
   '/': typeof IndexRoute
@@ -88,6 +95,7 @@ export interface FileRoutesByFullPath {
   '/saved': typeof SavedRoute
   '/security': typeof SecurityRoute
   '/terms': typeof TermsRoute
+  '/api/public/payments/webhook': typeof ApiPublicPaymentsWebhookRoute
   '/api/public/v1/tests': typeof ApiPublicV1TestsRoute
 }
 export interface FileRoutesByTo {
@@ -101,6 +109,7 @@ export interface FileRoutesByTo {
   '/saved': typeof SavedRoute
   '/security': typeof SecurityRoute
   '/terms': typeof TermsRoute
+  '/api/public/payments/webhook': typeof ApiPublicPaymentsWebhookRoute
   '/api/public/v1/tests': typeof ApiPublicV1TestsRoute
 }
 export interface FileRoutesById {
@@ -115,6 +124,7 @@ export interface FileRoutesById {
   '/saved': typeof SavedRoute
   '/security': typeof SecurityRoute
   '/terms': typeof TermsRoute
+  '/api/public/payments/webhook': typeof ApiPublicPaymentsWebhookRoute
   '/api/public/v1/tests': typeof ApiPublicV1TestsRoute
 }
 export interface FileRouteTypes {
@@ -130,6 +140,7 @@ export interface FileRouteTypes {
     | '/saved'
     | '/security'
     | '/terms'
+    | '/api/public/payments/webhook'
     | '/api/public/v1/tests'
   fileRoutesByTo: FileRoutesByTo
   to:
@@ -143,6 +154,7 @@ export interface FileRouteTypes {
     | '/saved'
     | '/security'
     | '/terms'
+    | '/api/public/payments/webhook'
     | '/api/public/v1/tests'
   id:
     | '__root__'
@@ -156,6 +168,7 @@ export interface FileRouteTypes {
     | '/saved'
     | '/security'
     | '/terms'
+    | '/api/public/payments/webhook'
     | '/api/public/v1/tests'
   fileRoutesById: FileRoutesById
 }
@@ -170,6 +183,7 @@ export interface RootRouteChildren {
   SavedRoute: typeof SavedRoute
   SecurityRoute: typeof SecurityRoute
   TermsRoute: typeof TermsRoute
+  ApiPublicPaymentsWebhookRoute: typeof ApiPublicPaymentsWebhookRoute
   ApiPublicV1TestsRoute: typeof ApiPublicV1TestsRoute
 }
 
@@ -252,6 +266,13 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof ApiPublicV1TestsRouteImport
       parentRoute: typeof rootRouteImport
     }
+    '/api/public/payments/webhook': {
+      id: '/api/public/payments/webhook'
+      path: '/api/public/payments/webhook'
+      fullPath: '/api/public/payments/webhook'
+      preLoaderRoute: typeof ApiPublicPaymentsWebhookRouteImport
+      parentRoute: typeof rootRouteImport
+    }
   }
 }
 
@@ -266,6 +287,7 @@ const rootRouteChildren: RootRouteChildren = {
   SavedRoute: SavedRoute,
   SecurityRoute: SecurityRoute,
   TermsRoute: TermsRoute,
+  ApiPublicPaymentsWebhookRoute: ApiPublicPaymentsWebhookRoute,
   ApiPublicV1TestsRoute: ApiPublicV1TestsRoute,
 }
 export const routeTree = rootRouteImport

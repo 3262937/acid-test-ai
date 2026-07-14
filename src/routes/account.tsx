@@ -2,11 +2,13 @@ import { createFileRoute, Link, useNavigate } from "@tanstack/react-router";
 import { useCallback, useEffect, useState } from "react";
 import { useServerFn } from "@tanstack/react-start";
 import { toast } from "sonner";
-import { Copy, KeyRound, LogOut, Plus, Save, Trash2, User as UserIcon } from "lucide-react";
+import { Copy, KeyRound, LogOut, Plus, Save, Trash2, User as UserIcon, Zap } from "lucide-react";
 import { PillNav } from "@/components/site/PillNav";
 import { Footer } from "@/components/site/FinalCta";
+import { BuyCreditsDialog } from "@/components/site/BuyCreditsDialog";
 import { useSession } from "@/hooks/use-session";
 import { useProfile } from "@/hooks/use-profile";
+import { useCredits } from "@/hooks/use-credits";
 import { updateMyProfile } from "@/lib/profile.functions";
 import {
   type ApiKeyRow,
@@ -190,10 +192,70 @@ function AccountPage() {
           </form>
         </div>
 
+        <CreditsPanel />
         <ApiKeysPanel />
       </section>
       <Footer />
     </main>
+  );
+}
+
+function CreditsPanel() {
+  const { balance, refresh } = useCredits();
+  const [buyOpen, setBuyOpen] = useState(false);
+
+  // Refresh after returning from Stripe (?credits=purchased)
+  useEffect(() => {
+    if (typeof window === "undefined") return;
+    const params = new URLSearchParams(window.location.search);
+    if (params.get("credits") === "purchased") {
+      // Give the webhook a beat to land, then poll.
+      let tries = 0;
+      const id = window.setInterval(() => {
+        tries += 1;
+        void refresh();
+        if (tries >= 6) window.clearInterval(id);
+      }, 1500);
+      // Clean URL
+      const url = new URL(window.location.href);
+      url.searchParams.delete("credits");
+      window.history.replaceState({}, "", url.toString());
+      toast.success("Payment received", { description: "Credits will appear shortly." });
+      return () => window.clearInterval(id);
+    }
+  }, [refresh]);
+
+  return (
+    <div className="mt-10 folder-tab p-8 pt-10">
+      <div className="mb-6 flex items-start justify-between gap-3">
+        <div className="flex items-center gap-3">
+          <Zap size={16} className="text-acid" />
+          <div>
+            <div className="label-mono text-acid">§ Credits</div>
+            <h2 className="font-display text-2xl font-bold tracking-[-0.02em]">Balance & top-ups</h2>
+          </div>
+        </div>
+        <button
+          onClick={() => setBuyOpen(true)}
+          className="inline-flex items-center gap-2 rounded-md bg-acid px-4 py-2.5 font-mono text-[11px] font-bold uppercase tracking-widest text-[#0a0a0a] shadow-[0_0_24px_-4px_rgba(197,239,87,0.6)] transition-all hover:shadow-[0_0_40px_-2px_rgba(197,239,87,0.9)]"
+        >
+          <Plus size={12} /> Buy credits
+        </button>
+      </div>
+
+      <div className="rounded-md border border-white/10 bg-white/[0.02] p-5">
+        <div className="label-mono text-muted-ink">Available</div>
+        <div className="mt-1 flex items-baseline gap-2">
+          <span className="font-display text-4xl font-bold text-acid">{balance ?? "—"}</span>
+          <span className="font-mono text-[12px] text-muted-ink">credits</span>
+        </div>
+        <p className="mt-2 font-mono text-[11px] text-muted-ink">
+          1 credit = 1 test generation on the demo or Playground. Credits never expire.
+        </p>
+      </div>
+
+      <BuyCreditsDialog open={buyOpen} onClose={() => setBuyOpen(false)} onSuccess={refresh} />
+    </div>
   );
 }
 

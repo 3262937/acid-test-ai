@@ -1,19 +1,21 @@
-import { createFileRoute, Link } from "@tanstack/react-router";
+import { createFileRoute, Link, useNavigate } from "@tanstack/react-router";
 import { useState } from "react";
 import { motion } from "framer-motion";
 import { useServerFn } from "@tanstack/react-start";
 import { toast } from "sonner";
-import { Bookmark } from "lucide-react";
+import { Bookmark, Zap } from "lucide-react";
 import { PillNav } from "@/components/site/PillNav";
 import { Footer } from "@/components/site/FinalCta";
 import { CodeTyper } from "@/components/site/CodeTyper";
+import { BuyCreditsDialog } from "@/components/site/BuyCreditsDialog";
 import { generateCode, type Framework } from "@/components/site/generators";
 import { useSession } from "@/hooks/use-session";
+import { useCredits } from "@/hooks/use-credits";
 import { saveTest } from "@/lib/saved-tests.functions";
 
 const ALL: Framework[] = ["Playwright", "Cypress", "Selenium"];
 const EXTRA = ["Jest", "Vitest", "Mocha", "Puppeteer", "Appium"];
-
+const FREE_TRY_KEY = "acidtest_free_try_used";
 
 export const Route = createFileRoute("/playground")({
   component: Playground,
@@ -34,9 +36,12 @@ function Playground() {
   );
   const [fw, setFw] = useState<Framework>("Playwright");
   const [runKey, setRunKey] = useState(0);
-  const [visible, setVisible] = useState(true);
+  const [visible, setVisible] = useState(false);
   const [saving, setSaving] = useState(false);
+  const [buyOpen, setBuyOpen] = useState(false);
   const { user } = useSession();
+  const navigate = useNavigate();
+  const { balance, consume, refresh } = useCredits();
   const save = useServerFn(saveTest);
 
   const cases = [
@@ -45,7 +50,30 @@ function Playground() {
     { id: "TC-003", prio: "P2", title: "Stacked codes reject with generic message" },
   ];
 
-  function run() {
+  async function run() {
+    if (!user) {
+      const used = typeof window !== "undefined" && localStorage.getItem(FREE_TRY_KEY) === "1";
+      if (used) {
+        toast.error("Free preview used", {
+          description: "Sign in to keep generating.",
+          action: { label: "Sign in", onClick: () => navigate({ to: "/login" }) },
+        });
+        return;
+      }
+      if (typeof window !== "undefined") localStorage.setItem(FREE_TRY_KEY, "1");
+      toast.success("That was your free try", {
+        description: "Sign in to get 3 more credits.",
+      });
+    } else {
+      const res = await consume();
+      if (!res.ok) {
+        toast.error("Out of credits", {
+          description: "Buy a pack to keep generating.",
+          action: { label: "Buy credits", onClick: () => setBuyOpen(true) },
+        });
+        return;
+      }
+    }
     setVisible(false);
     setRunKey((k) => k + 1);
     setTimeout(() => setVisible(true), 60);
@@ -79,6 +107,22 @@ function Playground() {
             <h1 className="font-display text-4xl font-bold tracking-[-0.02em] md:text-5xl">
               Synthesize a suite.
             </h1>
+            {user ? (
+              <p className="mt-3 text-sm text-muted-ink">
+                Credits: <span className="font-mono text-acid">{balance ?? "—"}</span> · 1 per generation.{" "}
+                <button onClick={() => setBuyOpen(true)} className="text-acid hover:underline">
+                  Buy more →
+                </button>
+              </p>
+            ) : (
+              <p className="mt-3 text-sm text-muted-ink">
+                1 free preview.{" "}
+                <Link to="/login" className="text-acid hover:underline">
+                  Sign in
+                </Link>{" "}
+                for 3 welcome credits.
+              </p>
+            )}
           </div>
           <Link
             to="/saved"
@@ -114,9 +158,9 @@ function Playground() {
             </select>
             <button
               onClick={run}
-              className="w-full rounded-md bg-acid px-5 py-3 font-mono text-[11px] font-bold uppercase tracking-widest text-[#0a0a0a] shadow-[0_0_28px_-4px_rgba(197,239,87,0.6)] transition-all hover:shadow-[0_0_44px_-2px_rgba(197,239,87,0.85)]"
+              className="inline-flex w-full items-center justify-center gap-2 rounded-md bg-acid px-5 py-3 font-mono text-[11px] font-bold uppercase tracking-widest text-[#0a0a0a] shadow-[0_0_28px_-4px_rgba(197,239,87,0.6)] transition-all hover:shadow-[0_0_44px_-2px_rgba(197,239,87,0.85)]"
             >
-              ▶ Generate suite
+              <Zap size={12} /> Generate suite (1 credit)
             </button>
             <button
               onClick={handleSave}
@@ -131,33 +175,48 @@ function Playground() {
 
 
           <div className="space-y-4">
-            <div className="grid grid-cols-1 gap-3 md:grid-cols-3">
-              {cases.map((c, i) => (
-                <motion.div
-                  key={`${runKey}-${c.id}`}
-                  initial={{ opacity: 0, y: 10 }}
-                  animate={visible ? { opacity: 1, y: 0 } : {}}
-                  transition={{ delay: i * 0.15, duration: 0.4 }}
-                  className="folder-tab p-4 pt-6"
-                >
-                  <div className="mb-2 flex items-center justify-between">
-                    <span className="label-mono">{c.id} · {c.prio}</span>
-                    <span className="rounded bg-acid px-2 py-0.5 font-mono text-[10px] font-bold text-[#0a0a0a]">
-                      PASS
-                    </span>
-                  </div>
-                  <p className="text-[13px] leading-snug">{c.title}</p>
-                </motion.div>
-              ))}
-            </div>
-            <CodeTyper
-              key={`${fw}-${runKey}`}
-              code={generateCode(fw, story)}
-              filename={`generated.${fw.toLowerCase()}.ts`}
-            />
+            {visible ? (
+              <>
+                <div className="grid grid-cols-1 gap-3 md:grid-cols-3">
+                  {cases.map((c, i) => (
+                    <motion.div
+                      key={`${runKey}-${c.id}`}
+                      initial={{ opacity: 0, y: 10 }}
+                      animate={{ opacity: 1, y: 0 }}
+                      transition={{ delay: i * 0.15, duration: 0.4 }}
+                      className="folder-tab p-4 pt-6"
+                    >
+                      <div className="mb-2 flex items-center justify-between">
+                        <span className="label-mono">{c.id} · {c.prio}</span>
+                        <span className="rounded bg-acid px-2 py-0.5 font-mono text-[10px] font-bold text-[#0a0a0a]">
+                          PASS
+                        </span>
+                      </div>
+                      <p className="text-[13px] leading-snug">{c.title}</p>
+                    </motion.div>
+                  ))}
+                </div>
+                <CodeTyper
+                  key={`${fw}-${runKey}`}
+                  code={generateCode(fw, story)}
+                  filename={`generated.${fw.toLowerCase()}.ts`}
+                />
+              </>
+            ) : (
+              <div className="folder-tab flex h-[520px] flex-col items-center justify-center gap-3 p-8 text-center">
+                <div className="label-mono text-acid">§ Awaiting input</div>
+                <p className="max-w-md text-sm text-muted-ink">
+                  Hit <span className="font-mono text-ink">Generate suite</span> to synthesize test cases and runnable {fw} code from your story.
+                </p>
+                <p className="font-mono text-[11px] text-muted-ink">
+                  {user ? "Each generation costs 1 credit." : "1 free preview, then sign in."}
+                </p>
+              </div>
+            )}
           </div>
         </div>
       </section>
+      <BuyCreditsDialog open={buyOpen} onClose={() => setBuyOpen(false)} onSuccess={refresh} />
       <Footer />
     </main>
   );
