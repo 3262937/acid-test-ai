@@ -2,7 +2,7 @@ import { createFileRoute, Link, useNavigate } from "@tanstack/react-router";
 import { useCallback, useEffect, useState } from "react";
 import { useServerFn } from "@tanstack/react-start";
 import { toast } from "sonner";
-import { Copy, KeyRound, LogOut, Plus, Save, Trash2, User as UserIcon, Zap } from "lucide-react";
+import { Copy, Database, FileUp, FolderUp, KeyRound, LogOut, Plus, Save, Trash2, User as UserIcon, Zap } from "lucide-react";
 import { PillNav } from "@/components/site/PillNav";
 import { Footer } from "@/components/site/FinalCta";
 import { BuyCreditsDialog } from "@/components/site/BuyCreditsDialog";
