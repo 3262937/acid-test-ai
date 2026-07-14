@@ -4,6 +4,7 @@ import { Github, Loader2, Mail } from "lucide-react";
 import { lovable } from "@/integrations/lovable/index";
 import { supabase } from "@/integrations/supabase/client";
 import { useSession } from "@/hooks/use-session";
+import { Logo } from "@/components/site/Logo";
 
 export const Route = createFileRoute("/login")({
   component: LoginPage,
@@ -107,9 +108,7 @@ function LoginPage() {
 
       <div className="mx-auto flex min-h-screen max-w-[480px] flex-col items-stretch justify-center px-6 py-16">
         <Link to="/" className="mb-10 self-start">
-          <span className="text-acid font-display text-2xl font-bold italic tracking-tight">
-            AcidTest
-          </span>
+          <Logo size="md" />
         </Link>
 
         <div className="folder-tab p-8 pt-10">

@@ -1,4 +1,5 @@
 import { Link } from "@tanstack/react-router";
+import { Logo } from "./Logo";
 
 export function FinalCta() {
   return (
@@ -27,7 +28,7 @@ export function Footer() {
   return (
     <footer className="border-t border-white/5">
       <div className="mx-auto flex max-w-[1200px] flex-col items-center justify-between gap-6 px-6 py-10 md:flex-row">
-        <span className="text-acid font-display text-lg font-bold italic">AcidTest</span>
+        <Logo size="lg" />
         <div className="flex flex-wrap justify-center gap-6 label-mono">
           <Link className="hover:text-acid" to="/privacy">Privacy</Link>
           <Link className="hover:text-acid" to="/terms">Terms</Link>

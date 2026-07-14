@@ -1,85 +1,65 @@
-# API Keys for CLI / MCP with Usage Metering
+# AcidTest — Logo consistency + UX polish
 
-Let users mint personal API keys from the Account page, then use them from a CLI or MCP client to hit our HTTP API. Every request is metered.
+## What I found
 
-## User flow
+### 1. Logo is inconsistent
+Three different treatments in the app right now:
 
-1. Signed-in user goes to **Account → API Keys**.
-2. Clicks **Create key**, gives it a label (e.g. "laptop CLI").
-3. Sees the full key **once** (`lv_live_...`) with a copy button. After that only the prefix + last 4 chars are visible.
-4. Can revoke any key at any time.
-5. A **Usage** panel shows requests in the last 24h / 7d / 30d, and per-key totals.
+| Location | Current | |
+|---|---|---|
+| Top nav (`PillNav.tsx`) | `Acid·Test` — bold, no italic, dot separator, plain ink color | ❌ off-brand |
+| Login page (`login.tsx:110`) | `AcidTest` — italic, acid-green | ✅ matches your reference |
+| Footer (`FinalCta.tsx:30`) | `AcidTest` — italic, acid-green | ✅ matches |
+| 404 page | no wordmark | — |
 
-## Public API (what the key unlocks)
+Your uploaded screenshot confirms the italic acid-green `AcidTest` is the intended mark.
 
-Two `/api/public/*` endpoints, authenticated by `Authorization: Bearer lv_live_...`:
+### 2. Smooth-UX issues worth fixing in the same pass
+- No global smooth-scroll for the `#protocol` / `#pricing` hash links used by PillNav → jumps abruptly.
+- Nav lacks a scrolled state (background stays the same translucency → hard to read over bright hero glow when scrolled).
+- No shared `<Logo>` component, so any future tweak forces edits in 3 files (root cause of the drift).
+- Focus rings missing on the round avatar button and pill nav links → keyboard users get no feedback.
+- Reduced-motion is respected in Hero but not in `CodeTyper` scroll interval / marquee → good to align.
 
-- `GET  /api/public/v1/tests` — list caller's saved tests
-- `POST /api/public/v1/tests` — save a new test (title, story, framework, code)
+### 3. Remaining functional work still open from earlier turns
+- GitHub OAuth: `/login` correctly disables the button and shows the amber banner, but there's no follow-up task tracked. Not code-actionable until you migrate — leave as-is.
+- API keys + rate limit: shipped. No known gaps.
+- No sitemap.xml / robots.txt yet (SEO polish, optional).
 
-Each request:
-- Verifies the key (hash lookup), rejects revoked/unknown keys with 401.
-- Loads the owning `user_id`, scopes DB access to that user via service role.
-- Increments `api_keys.last_used_at` and inserts a row into `api_usage`.
+## Plan
 
-## Data model (new tables)
+### Step 1 — Create a single source of truth for the wordmark
+New file `src/components/site/Logo.tsx`:
 
-```text
-api_keys
-  id uuid pk
-  user_id uuid  → auth.users
-  label text
-  prefix text            -- "lv_live_abcd" (shown in UI)
-  last4 text             -- last 4 chars
-  key_hash text unique   -- sha256(full key)
-  created_at, last_used_at, revoked_at
-
-api_usage
-  id bigserial pk
-  api_key_id uuid → api_keys
-  user_id uuid
-  endpoint text          -- "GET /v1/tests"
-  status_code int
-  created_at timestamptz
-  -- indexed on (user_id, created_at) and (api_key_id, created_at)
+```tsx
+// Renders the canonical italic acid-green AcidTest wordmark.
+// size: "sm" (nav ~15px), "md" (login ~24px), "lg" (footer ~18px)
+export function Logo({ size = "sm" }: { size?: "sm" | "md" | "lg" }) { … }
 ```
 
-RLS: users can `SELECT`/`INSERT`/`UPDATE` (revoke) their own `api_keys`; users can `SELECT` their own `api_usage`. All writes from the public API go through service role after the bearer token is verified.
+Uses `font-display font-bold italic text-acid tracking-tight` with size-driven `text-*` class. Wrapped in a `<span>` so callers control the surrounding `<Link>`.
 
-## Server functions (signed-in users)
+### Step 2 — Swap the three call sites to `<Logo>`
+- `PillNav.tsx:42-44` → `<Link to="/"><Logo size="sm" /></Link>`
+- `routes/login.tsx:109-113` → `<Link to="/"><Logo size="md" /></Link>`
+- `FinalCta.tsx:30` → `<Logo size="lg" />`
 
-- `listApiKeys()` — rows for current user (never returns hash or full key).
-- `createApiKey({ label })` — generates `lv_live_<32 random bytes base62>`, stores `sha256`, returns the plaintext exactly once.
-- `revokeApiKey({ id })` — sets `revoked_at`.
-- `getUsageSummary({ range })` — counts from `api_usage` for the current user.
+Result: every wordmark is italic acid-green `AcidTest`, matching your screenshot.
 
-## Public API routes
+### Step 3 — Smooth-UX polish (small, presentation-only)
+- `src/styles.css`: add `html { scroll-behavior: smooth; }` inside a `@media (prefers-reduced-motion: no-preference)` block so hash-link jumps glide.
+- `PillNav.tsx`: add a `scrolled` state via `useEffect` + `scrollY > 24`, toggling a denser background class (`bg-[rgba(10,10,11,0.9)]` + a hairline border) for readability over the hero.
+- Add `focus-visible:outline focus-visible:outline-2 focus-visible:outline-acid/60 focus-visible:outline-offset-2` to the avatar button and the pill nav links.
 
-`src/routes/api/public/v1/tests.ts` — `GET` and `POST` handlers that:
-1. Extract bearer token, sha256 it, look up in `api_keys` where `revoked_at is null`.
-2. On miss → 401. On hit → run query as that `user_id` via service role.
-3. Log to `api_usage`, bump `last_used_at`.
+### Step 4 — Verify
+- `bunx tsgo --noEmit`
+- Playwright screenshot of `/`, `/login`, `/account` at 1280×1800 to confirm the wordmark is identical everywhere and the nav densifies on scroll.
 
-Rate limiting: soft cap of 60 req/min per key enforced by counting recent `api_usage` rows; over the cap returns 429.
+## Out of scope (call out, don't do)
+- GitHub OAuth wiring — blocked on your Supabase migration; the amber banner already communicates this.
+- Sitemap/robots, favicon variants — separate SEO task if you want it later.
+- Any backend / rate-limit changes — feature is already shipped.
 
-## UI
-
-- New section on `/account` (or a dedicated `/account/api-keys` route): keys table (label, prefix…last4, created, last used, Revoke) + "Create key" dialog + one-time reveal modal.
-- Usage panel: three number cards (24h / 7d / 30d) and a small per-key breakdown table.
-
-## Docs snippet
-
-Short curl example on the same page:
-
-```bash
-curl https://<your-app>/api/public/v1/tests \
-  -H "Authorization: Bearer lv_live_..."
-```
-
-## Out of scope for this pass
-
-- No MCP server implementation yet — this delivers the HTTP API + keys that an MCP server (or CLI) would call. Wiring an actual MCP server can be a follow-up.
-- No per-plan quotas / billing — metering only.
-- No key rotation UI beyond "revoke + create new".
-
-Approve and I'll build it.
+## Files touched
+- **New**: `src/components/site/Logo.tsx`
+- **Edit**: `src/components/site/PillNav.tsx`, `src/components/site/FinalCta.tsx`, `src/routes/login.tsx`, `src/styles.css`
