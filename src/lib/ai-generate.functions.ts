@@ -5,7 +5,7 @@ import type { Provider } from "@/lib/user-keys.functions";
 import { FRAMEWORKS, type Framework } from "@/components/site/generators";
 
 function buildPrompt(story: string, framework: Framework) {
-  return `You are a senior QA engineer. Generate a runnable ${framework} test suite (TypeScript) for the following user story.
+  return `You are a senior QA engineer. Generate a runnable ${framework} test suite in the framework's native language for the following user story.
 Return ONLY the code, no markdown fences, no commentary.
 
 USER STORY:
@@ -13,7 +13,7 @@ ${story}
 
 Requirements:
 - 3 test cases covering happy path, invalid input, edge case.
-- Use realistic selectors (getByRole / getByLabel).
+- Use realistic selectors / assertions idiomatic to ${framework}.
 - Include a short header comment describing the spec.`;
 }
 
@@ -55,7 +55,7 @@ export const generateWithUserKey = createServerFn({ method: "POST" })
   .middleware([requireSupabaseAuth])
   .inputValidator((data: { provider: Provider; story: string; framework: Framework }) => {
     if (!["openai", "anthropic"].includes(data.provider)) throw new Error("Invalid provider");
-    if (!["Playwright", "Cypress", "Selenium"].includes(data.framework)) throw new Error("Invalid framework");
+    if (!FRAMEWORKS.includes(data.framework)) throw new Error("Invalid framework");
     const s = data.story.trim();
     if (s.length < 5) throw new Error("Story too short");
     if (s.length > 4000) throw new Error("Story too long");
