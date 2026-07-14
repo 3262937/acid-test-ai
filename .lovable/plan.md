@@ -1,48 +1,120 @@
+## Goal
 
-## Scope
+Two parallel tracks:
+1. **Mirror the AcidTest project codebase to GitHub** via Lovable's built-in Git sync.
+2. **Let signed-in users push generated test suites from the Playground / Saved tests page to a GitHub repo they own**.
 
-1. **LiveDemo (`src/components/site/LiveDemo.tsx`)** — add an "Upload doc" button next to the story input, mirroring Playground behaviour (sign-in required, 5 MB cap, reuses existing `parseUploadedFile` server fn). Replace the 3-tab framework switcher with the same 16-framework picker used on Playground.
+---
 
-2. **Playground (`src/routes/playground.tsx`)** — replace the current `<select>` (3 active + 5 disabled) with the full 16-framework picker.
+## Track 1 — Project backup to GitHub (Lovable Git sync)
 
-3. **Framework catalog (`src/components/site/generators.ts`)** — extend `Framework` type + `generateCode()` to cover all 16 targets. Each generator emits a minimal, syntactically-correct stub in the target language so `CodeTyper` renders it and BYO/Lovable generation prompts can request the same framework by name.
+### What you do in the Lovable UI
 
-## The 16 frameworks (Multi-language QA set)
+Lovable handles the two-way sync; I cannot click the connection flow for you.
 
-| # | Label | Language | File ext |
-|---|---|---|---|
-| 1 | Playwright | TypeScript | `.spec.ts` |
-| 2 | Cypress | TypeScript | `.cy.ts` |
-| 3 | Selenium (Java) | Java | `.java` |
-| 4 | Selenium (Python) | Python / pytest | `.py` |
-| 5 | Selenium (C#) | C# / NUnit | `.cs` |
-| 6 | Puppeteer | TypeScript | `.test.ts` |
-| 7 | WebdriverIO | TypeScript | `.e2e.ts` |
-| 8 | Appium | JavaScript | `.test.js` |
-| 9 | Espresso | Kotlin | `.kt` |
-| 10 | XCUITest | Swift | `.swift` |
-| 11 | RestAssured | Java | `.java` |
-| 12 | Postman | JSON collection | `.json` |
-| 13 | Robot Framework | Robot | `.robot` |
-| 14 | Cucumber | Gherkin | `.feature` |
-| 15 | JUnit | Java | `.java` |
-| 16 | TestNG | Java | `.xml` + Java |
+1. Open the project in the Lovable editor.
+2. Click the **Plus (+)** menu in the chat input → **GitHub → Connect project**.
+3. Authorize the Lovable GitHub App.
+4. Pick the GitHub account/organization and create the repository.
+5. Once connected, every commit I make in this editor pushes to GitHub and every GitHub push syncs back.
 
-## UI approach
+### What I will prepare in code
 
-- **Framework picker**: compact 4×4 grid of pill buttons (mono, uppercase, `text-[10px]`) styled like the existing Engine toggle. Selected pill uses `border-acid/60 bg-acid/10 text-acid`. Fits both LiveDemo and Playground layouts without breaking the folder-tab visual.
-- **CodeTyper filename**: derive extension from a small `FRAMEWORK_META` map so the tab shows `generated.playwright.spec.ts`, `generated.selenium-python.py`, `generated.jira.feature`, etc.
-- **BYO prompt**: `buildPrompt()` in `ai-generate.functions.ts` already interpolates the framework name — pass the full label (e.g. "Selenium (Python / pytest)") so the LLM produces the right language.
+- `README.md` — project overview, stack, local dev commands, env vars needed.
+- `LICENSE` — MIT license for the project.
+- `.github/workflows/ci.yml` — build + typecheck on PR/push.
+- Polish `.gitignore` if anything sensitive is missing.
 
-## Files to touch
+These files make the exported repo useful and professional, but they do not trigger the sync itself.
 
-- `src/components/site/generators.ts` — expand `Framework` union, add `FRAMEWORK_META` (label, ext, language), add 16 stub generators.
-- `src/components/site/LiveDemo.tsx` — add upload button + hidden file input (reuses `parseUploadedFile` + `useSession`), swap 3-tab bar for 16-item pill grid.
-- `src/routes/playground.tsx` — replace `<select>` with the same pill-grid component (extract shared `FrameworkPicker` into `src/components/site/FrameworkPicker.tsx`).
-- `src/lib/ai-generate.functions.ts` — widen `Framework` validator to accept all 16 labels.
+---
 
-## Not in scope
+## Track 2 — In-app "Push to GitHub" export
 
-- No new DB tables, no new server routes, no auth changes.
-- Jira ticket creation stays as previously scoped (separate follow-up).
-- Anonymous upload stays disabled per your answer.
+### 1. Connector setup
+
+Link the workspace **GitHub API** connector to this project so server code can call the GitHub REST API through Lovable's gateway.
+
+- Connector: `github` (gateway-backed).
+- Required env vars after linking: `LOVABLE_API_KEY` + `GITHUB_API_KEY`.
+
+### 2. Database schema
+
+New `public.user_github_settings` table:
+
+```text
+id            uuid pk default gen_random_uuid()
+user_id       uuid -> auth.users(id) on delete cascade
+repo_full_name text  -- e.g. "myorg/acidtest-suites"
+branch        text  -- default "main"
+base_path     text  -- e.g. "tests/"
+created_at    timestamptz default now()
+updated_at    timestamptz default now()
+```
+
+- GRANT SELECT/INSERT/UPDATE/DELETE to `authenticated`.
+- Enable RLS.
+- Policy: users can only CRUD their own row (`auth.uid() = user_id`).
+
+### 3. Server functions
+
+Create `src/lib/github-export.functions.ts`:
+
+- `getUserGitHubSettings()` — fetch or create the user's settings row.
+- `saveUserGitHubSettings(data)` — update repo/branch/base_path.
+- `pushTestToGitHub(data)` — authenticated only.
+  - Inputs: `title`, `framework`, `code`, optional `filename`.
+  - Reads settings; falls back to defaults.
+  - Calls GitHub gateway `PUT /repos/{owner}/{repo}/contents/{path}` with a generated filename like `{slug}-{framework}.{ext}`.
+  - Returns the GitHub HTML URL of the created file.
+
+### 4. UI components
+
+- `GitHubExportDialog` — reusable modal for:
+  - Repo input (`owner/repo`).
+  - Branch input (default `main`).
+  - Base path input (default `acidtest-suites/`).
+  - "Save settings" + "Push now" buttons.
+  - Success state with a link to the created file/commit.
+- Add a **GitHub** icon button next to **Save** in:
+  - `src/components/site/LiveDemo.tsx`
+  - `src/routes/playground.tsx`
+  - `src/routes/saved.tsx` (per-test row)
+- Show a toast on success with the commit URL.
+
+### 5. Error handling
+
+- If no connector is linked, show a message explaining the setup.
+- Surface GitHub API errors (rate limit, permission, missing repo) in the dialog.
+
+---
+
+## Files to create / edit
+
+### New files
+- `README.md`
+- `LICENSE`
+- `.github/workflows/ci.yml`
+- `src/lib/github-export.functions.ts`
+- `src/components/site/GitHubExportDialog.tsx`
+- `supabase/migrations/<timestamp>_add_user_github_settings.sql`
+
+### Edited files
+- `src/routes/playground.tsx` — add GitHub export button.
+- `src/components/site/LiveDemo.tsx` — add GitHub export button.
+- `src/routes/saved.tsx` — add per-test GitHub export button.
+- `.gitignore` — review/polish.
+
+---
+
+## Out of scope
+
+- GitHub OAuth per app user (the connector uses the workspace owner's token; if each end user needs their own repo access, that requires a separate OAuth flow — let me know if you want that instead).
+- Automatic two-way sync of generated tests back into AcidTest.
+- Branch/PR creation; first version commits directly to the configured branch.
+
+---
+
+## Open question before I start
+
+For the in-app export, do you want the workspace GitHub connector to act on **your** GitHub account (the project owner), or do you need each AcidTest end user to authorize their own GitHub account? The first is faster; the second requires per-user OAuth and a different architecture.
