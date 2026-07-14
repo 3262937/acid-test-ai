@@ -4,11 +4,20 @@ import type { Provider } from "@/lib/user-keys.functions";
 
 import { FRAMEWORKS, type Framework } from "@/components/site/generators";
 
-function buildPrompt(story: string, framework: Framework) {
+function buildPrompt(story: string, framework: Framework, ragContext?: string) {
+  const rag =
+    ragContext && ragContext.trim().length > 0
+      ? `--- RETRIEVED TEST PATTERNS (reference only) ---
+${ragContext}
+------------------------------------------------
+Use these proven patterns as guidance for coverage (happy path, negative, edge, security); do not copy them verbatim.
+
+`
+      : "";
   return `You are a senior QA engineer. Generate a runnable ${framework} test suite in the framework's native language for the following user story.
 Return ONLY the code, no markdown fences, no commentary.
 
-USER STORY:
+${rag}USER STORY:
 ${story}
 
 Requirements:
