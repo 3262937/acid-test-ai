@@ -51,10 +51,27 @@ async function callAnthropic(apiKey: string, prompt: string): Promise<string> {
   return json.content.map((c) => c.text).join("");
 }
 
+async function callNvidia(apiKey: string, prompt: string): Promise<string> {
+  const res = await fetch("https://integrate.api.nvidia.com/v1/chat/completions", {
+    method: "POST",
+    headers: { "Content-Type": "application/json", Authorization: `Bearer ${apiKey}` },
+    body: JSON.stringify({
+      model: "meta/llama-3.1-70b-instruct",
+      messages: [{ role: "user", content: prompt }],
+      temperature: 0.4,
+      max_tokens: 2048,
+    }),
+  });
+  if (!res.ok) throw new Error(`NVIDIA NIM ${res.status}: ${await res.text()}`);
+  const json = (await res.json()) as { choices: { message: { content: string } }[] };
+  return json.choices[0]?.message?.content ?? "";
+}
+
 export const generateWithUserKey = createServerFn({ method: "POST" })
   .middleware([requireSupabaseAuth])
   .inputValidator((data: { provider: Provider; story: string; framework: Framework }) => {
-    if (!["openai", "anthropic"].includes(data.provider)) throw new Error("Invalid provider");
+    if (!["openai", "anthropic", "nvidia"].includes(data.provider))
+      throw new Error("Invalid provider");
     if (!FRAMEWORKS.includes(data.framework)) throw new Error("Invalid framework");
     const s = data.story.trim();
     if (s.length < 5) throw new Error("Story too short");
