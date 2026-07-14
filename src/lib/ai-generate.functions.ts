@@ -122,7 +122,24 @@ export const generateWithUserKey = createServerFn({ method: "POST" })
 
     try {
       const apiKey = decryptUserKey(row.key_ciphertext);
-      const prompt = buildPrompt(data.story, data.framework);
+
+      let ragContext: string | undefined;
+      try {
+        const { supabaseAdmin } = await import("@/integrations/supabase/client.server");
+        const { data: ragData } = await supabaseAdmin.functions.invoke("rag-retrieve", {
+          body: { query: data.story, k: 5 },
+        });
+        const chunks = (ragData as { chunks?: { content: string }[] } | null)?.chunks ?? [];
+        if (chunks.length > 0) {
+          ragContext = chunks.map((c, i) => `[${i + 1}] ${c.content}`).join("\n\n");
+        }
+      } catch {
+        ragContext = undefined;
+      }
+
+      const prompt = ragContext
+        ? buildPrompt(data.story, data.framework, ragContext)
+        : buildPrompt(data.story, data.framework);
       const code =
         data.provider === "openai"
           ? await callOpenAI(apiKey, prompt)
