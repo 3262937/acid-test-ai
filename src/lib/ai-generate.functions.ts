@@ -117,7 +117,9 @@ export const generateWithUserKey = createServerFn({ method: "POST" })
       const code =
         data.provider === "openai"
           ? await callOpenAI(apiKey, prompt)
-          : await callAnthropic(apiKey, prompt);
+          : data.provider === "anthropic"
+            ? await callAnthropic(apiKey, prompt)
+            : await callNvidia(apiKey, prompt);
       return { code: code.trim() };
     } catch (e) {
       return { error: (e as Error).message };
