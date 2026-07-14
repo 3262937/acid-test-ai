@@ -189,8 +189,243 @@ function AccountPage() {
             </div>
           </form>
         </div>
+
+        <ApiKeysPanel />
       </section>
       <Footer />
     </main>
+  );
+}
+
+function ApiKeysPanel() {
+  const [keys, setKeys] = useState<ApiKeyRow[]>([]);
+  const [usage, setUsage] = useState<UsageSummary | null>(null);
+  const [loading, setLoading] = useState(true);
+  const [label, setLabel] = useState("");
+  const [creating, setCreating] = useState(false);
+  const [newKey, setNewKey] = useState<string | null>(null);
+
+  const list = useServerFn(listApiKeys);
+  const create = useServerFn(createApiKey);
+  const revoke = useServerFn(revokeApiKey);
+  const remove = useServerFn(deleteApiKey);
+  const usageFn = useServerFn(getUsageSummary);
+
+  const refresh = useCallback(async () => {
+    try {
+      const [k, u] = await Promise.all([list(), usageFn()]);
+      setKeys(k.items);
+      setUsage(u);
+    } catch (err) {
+      toast.error("Failed to load API keys", { description: (err as Error).message });
+    } finally {
+      setLoading(false);
+    }
+  }, [list, usageFn]);
+
+  useEffect(() => {
+    void refresh();
+  }, [refresh]);
+
+  async function handleCreate(e: React.FormEvent) {
+    e.preventDefault();
+    if (!label.trim()) return;
+    setCreating(true);
+    try {
+      const res = await create({ data: { label: label.trim() } });
+      setNewKey(res.key);
+      setLabel("");
+      void refresh();
+    } catch (err) {
+      toast.error("Create failed", { description: (err as Error).message });
+    } finally {
+      setCreating(false);
+    }
+  }
+
+  async function handleRevoke(id: string) {
+    try {
+      await revoke({ data: { id } });
+      toast.success("Key revoked");
+      void refresh();
+    } catch (err) {
+      toast.error("Revoke failed", { description: (err as Error).message });
+    }
+  }
+
+  async function handleDelete(id: string) {
+    if (!confirm("Delete this key permanently? Existing usage logs are kept.")) return;
+    try {
+      await remove({ data: { id } });
+      toast.success("Key deleted");
+      void refresh();
+    } catch (err) {
+      toast.error("Delete failed", { description: (err as Error).message });
+    }
+  }
+
+  function copy(text: string) {
+    void navigator.clipboard.writeText(text);
+    toast.success("Copied to clipboard");
+  }
+
+  const usageByKey = new Map(usage?.perKey.map((p) => [p.api_key_id, p.count]) ?? []);
+
+  return (
+    <div className="mt-10 folder-tab p-8 pt-10">
+      <div className="mb-6 flex items-center gap-3">
+        <KeyRound size={16} className="text-acid" />
+        <div>
+          <div className="label-mono text-acid">§ API Keys</div>
+          <h2 className="font-display text-2xl font-bold tracking-[-0.02em]">
+            CLI &amp; MCP access
+          </h2>
+        </div>
+      </div>
+
+      <div className="mb-6 grid grid-cols-3 gap-3">
+        <UsageCard label="Last 24h" value={usage?.last24h ?? 0} />
+        <UsageCard label="Last 7d" value={usage?.last7d ?? 0} />
+        <UsageCard label="Last 30d" value={usage?.last30d ?? 0} />
+      </div>
+
+      <form onSubmit={handleCreate} className="mb-6 flex flex-wrap gap-2">
+        <input
+          type="text"
+          value={label}
+          onChange={(e) => setLabel(e.target.value)}
+          maxLength={60}
+          placeholder="Label (e.g. laptop CLI)"
+          className="flex-1 min-w-[220px] rounded-md border border-white/10 bg-carbon/60 p-3 font-mono text-[13px] text-ink outline-none focus:border-acid/50 focus:ring-2 focus:ring-acid/30"
+        />
+        <button
+          type="submit"
+          disabled={creating || !label.trim()}
+          className="inline-flex items-center gap-2 rounded-md bg-acid px-5 py-3 font-mono text-[11px] font-bold uppercase tracking-widest text-[#0a0a0a] transition-all hover:shadow-[0_0_40px_-2px_rgba(197,239,87,0.9)] disabled:opacity-50"
+        >
+          <Plus size={12} />
+          {creating ? "Creating…" : "Create key"}
+        </button>
+      </form>
+
+      {newKey && (
+        <div className="mb-6 rounded-md border border-acid/40 bg-acid/5 p-4">
+          <div className="label-mono mb-2 text-acid">§ Copy now — shown only once</div>
+          <div className="flex items-center gap-2">
+            <code className="flex-1 truncate rounded bg-black/40 px-3 py-2 font-mono text-[12px] text-ink">
+              {newKey}
+            </code>
+            <button
+              type="button"
+              onClick={() => copy(newKey)}
+              className="inline-flex items-center gap-1 rounded-md border border-white/10 bg-white/[0.05] px-3 py-2 font-mono text-[11px] uppercase tracking-widest text-ink hover:border-acid/40 hover:text-acid"
+            >
+              <Copy size={12} /> Copy
+            </button>
+            <button
+              type="button"
+              onClick={() => setNewKey(null)}
+              className="rounded-md border border-white/10 px-3 py-2 font-mono text-[11px] uppercase tracking-widest text-muted-ink hover:text-ink"
+            >
+              Dismiss
+            </button>
+          </div>
+        </div>
+      )}
+
+      {loading ? (
+        <div className="font-mono text-[12px] text-muted-ink">Loading…</div>
+      ) : keys.length === 0 ? (
+        <div className="font-mono text-[12px] text-muted-ink">
+          No keys yet. Create one above to start using the API.
+        </div>
+      ) : (
+        <div className="overflow-x-auto">
+          <table className="w-full text-left font-mono text-[12px]">
+            <thead>
+              <tr className="border-b border-white/10 text-muted-ink">
+                <th className="py-2 pr-3">Label</th>
+                <th className="py-2 pr-3">Key</th>
+                <th className="py-2 pr-3">Created</th>
+                <th className="py-2 pr-3">Last used</th>
+                <th className="py-2 pr-3">30d</th>
+                <th className="py-2 pr-3">Status</th>
+                <th className="py-2 pr-3" />
+              </tr>
+            </thead>
+            <tbody>
+              {keys.map((k) => (
+                <tr key={k.id} className="border-b border-white/5">
+                  <td className="py-3 pr-3 text-ink">{k.label}</td>
+                  <td className="py-3 pr-3 text-muted-ink">
+                    {k.prefix}…{k.last4}
+                  </td>
+                  <td className="py-3 pr-3 text-muted-ink">
+                    {new Date(k.created_at).toLocaleDateString()}
+                  </td>
+                  <td className="py-3 pr-3 text-muted-ink">
+                    {k.last_used_at ? new Date(k.last_used_at).toLocaleString() : "—"}
+                  </td>
+                  <td className="py-3 pr-3 text-ink">{usageByKey.get(k.id) ?? 0}</td>
+                  <td className="py-3 pr-3">
+                    {k.revoked_at ? (
+                      <span className="text-red-400">revoked</span>
+                    ) : (
+                      <span className="text-acid">active</span>
+                    )}
+                  </td>
+                  <td className="py-3 pr-3 text-right">
+                    {!k.revoked_at && (
+                      <button
+                        type="button"
+                        onClick={() => handleRevoke(k.id)}
+                        className="mr-2 rounded-md border border-white/10 px-2 py-1 text-[11px] uppercase tracking-widest text-muted-ink hover:border-red-400/40 hover:text-red-300"
+                      >
+                        Revoke
+                      </button>
+                    )}
+                    <button
+                      type="button"
+                      onClick={() => handleDelete(k.id)}
+                      className="inline-flex items-center gap-1 rounded-md border border-white/10 px-2 py-1 text-[11px] uppercase tracking-widest text-muted-ink hover:border-red-400/40 hover:text-red-300"
+                    >
+                      <Trash2 size={11} />
+                    </button>
+                  </td>
+                </tr>
+              ))}
+            </tbody>
+          </table>
+        </div>
+      )}
+
+      <details className="mt-6 rounded-md border border-white/10 bg-black/20 p-4">
+        <summary className="cursor-pointer font-mono text-[12px] text-acid">
+          Using your API key
+        </summary>
+        <pre className="mt-3 overflow-x-auto rounded bg-black/40 p-3 font-mono text-[11px] text-ink">
+{`# List your saved tests
+curl \\
+  -H "Authorization: Bearer lv_live_..." \\
+  ${typeof window !== "undefined" ? window.location.origin : "https://your-app"}/api/public/v1/tests
+
+# Save a new test
+curl -X POST \\
+  -H "Authorization: Bearer lv_live_..." \\
+  -H "Content-Type: application/json" \\
+  -d '{"title":"…","story":"…","framework":"jest","code":"…"}' \\
+  ${typeof window !== "undefined" ? window.location.origin : "https://your-app"}/api/public/v1/tests`}
+        </pre>
+      </details>
+    </div>
+  );
+}
+
+function UsageCard({ label, value }: { label: string; value: number }) {
+  return (
+    <div className="rounded-md border border-white/10 bg-white/[0.02] p-4">
+      <div className="label-mono text-muted-ink">{label}</div>
+      <div className="mt-1 font-display text-2xl font-bold text-ink">{value.toLocaleString()}</div>
+    </div>
   );
 }
