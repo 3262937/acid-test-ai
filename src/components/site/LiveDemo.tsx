@@ -192,19 +192,9 @@ export function LiveDemo() {
           </div>
 
           <div>
-            <div className="mb-3 flex items-center gap-2">
-              <div className="flex flex-1 gap-1 rounded-md border border-white/6 bg-[rgba(16,17,18,0.72)] p-1 backdrop-blur">
-                {FRAMEWORKS.map((f) => (
-                  <button
-                    key={f}
-                    onClick={() => setFw(f)}
-                    className={`flex-1 rounded px-3 py-2 font-mono text-[11px] font-bold uppercase tracking-widest transition-colors ${
-                      fw === f ? "bg-acid text-[#0a0a0a]" : "text-muted-ink hover:text-ink"
-                    }`}
-                  >
-                    {f}
-                  </button>
-                ))}
+            <div className="mb-3 flex items-start gap-2">
+              <div className="flex-1">
+                <FrameworkPicker value={fw} onChange={setFw} />
               </div>
               <button
                 onClick={handleSave}
@@ -220,7 +210,7 @@ export function LiveDemo() {
               <CodeTyper
                 key={`${fw}-${runKey}`}
                 code={code}
-                filename={`password-reset.${fw === "Playwright" ? "spec.ts" : fw === "Cypress" ? "cy.ts" : "test.ts"}`}
+                filename={`password-reset.${FRAMEWORK_META[fw].ext}`}
               />
             ) : (
               <div className="folder-tab-solid flex h-[440px] flex-col items-center justify-center gap-3 p-6 text-center">
