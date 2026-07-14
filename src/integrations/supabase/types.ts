@@ -85,6 +85,51 @@ export type Database = {
           },
         ]
       }
+      credit_ledger: {
+        Row: {
+          created_at: string
+          delta: number
+          id: string
+          idempotency_key: string | null
+          reason: string
+          user_id: string
+        }
+        Insert: {
+          created_at?: string
+          delta: number
+          id?: string
+          idempotency_key?: string | null
+          reason: string
+          user_id: string
+        }
+        Update: {
+          created_at?: string
+          delta?: number
+          id?: string
+          idempotency_key?: string | null
+          reason?: string
+          user_id?: string
+        }
+        Relationships: []
+      }
+      credits: {
+        Row: {
+          balance: number
+          updated_at: string
+          user_id: string
+        }
+        Insert: {
+          balance?: number
+          updated_at?: string
+          user_id: string
+        }
+        Update: {
+          balance?: number
+          updated_at?: string
+          user_id?: string
+        }
+        Relationships: []
+      }
       profiles: {
         Row: {
           avatar_url: string | null
@@ -144,7 +189,16 @@ export type Database = {
       [_ in never]: never
     }
     Functions: {
-      [_ in never]: never
+      add_credits: {
+        Args: {
+          _amount: number
+          _idempotency_key: string
+          _reason: string
+          _user_id: string
+        }
+        Returns: number
+      }
+      consume_credit: { Args: { _amount: number }; Returns: number }
     }
     Enums: {
       [_ in never]: never
