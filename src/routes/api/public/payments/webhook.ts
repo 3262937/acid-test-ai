@@ -23,12 +23,12 @@ async function handleCheckoutCompleted(session: Record<string, unknown>, env: St
     return;
   }
   const idempotencyKey = `stripe:${env}:${sessionId}`;
-  const { error } = await getSupabase().rpc("add_credits", {
+  const { error } = await getSupabase().rpc("add_credits" as never, {
     _user_id: userId,
     _amount: credits,
     _reason: `purchase:${metadata.priceId ?? "unknown"}`,
     _idempotency_key: idempotencyKey,
-  });
+  } as never);
   if (error) console.error("add_credits failed", error);
 }
 
