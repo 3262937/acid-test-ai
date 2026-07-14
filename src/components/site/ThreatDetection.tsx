@@ -340,7 +340,10 @@ export function ThreatDetection() {
                 onChange={handleFile}
                 className="hidden"
               />
-              <span className="label-mono">{framework}</span>
+              <span className="label-mono text-acid">
+                {framework}
+                <span className="ml-1.5 text-muted-ink">· {FW_LANG[framework]}</span>
+              </span>
             </div>
           </div>
 
