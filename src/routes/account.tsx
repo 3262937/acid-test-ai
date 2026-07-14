@@ -1,13 +1,22 @@
 import { createFileRoute, Link, useNavigate } from "@tanstack/react-router";
-import { useEffect, useState } from "react";
+import { useCallback, useEffect, useState } from "react";
 import { useServerFn } from "@tanstack/react-start";
 import { toast } from "sonner";
-import { LogOut, Save, User as UserIcon } from "lucide-react";
+import { Copy, KeyRound, LogOut, Plus, Save, Trash2, User as UserIcon } from "lucide-react";
 import { PillNav } from "@/components/site/PillNav";
 import { Footer } from "@/components/site/FinalCta";
 import { useSession } from "@/hooks/use-session";
 import { useProfile } from "@/hooks/use-profile";
 import { updateMyProfile } from "@/lib/profile.functions";
+import {
+  type ApiKeyRow,
+  type UsageSummary,
+  createApiKey,
+  deleteApiKey,
+  getUsageSummary,
+  listApiKeys,
+  revokeApiKey,
+} from "@/lib/api-keys.functions";
 import { supabase } from "@/integrations/supabase/client";
 
 export const Route = createFileRoute("/account")({

@@ -19,6 +19,7 @@ import { Route as FaqRouteImport } from './routes/faq'
 import { Route as DocsRouteImport } from './routes/docs'
 import { Route as AccountRouteImport } from './routes/account'
 import { Route as IndexRouteImport } from './routes/index'
+import { Route as ApiPublicV1TestsRouteImport } from './routes/api/public/v1/tests'
 
 const TermsRoute = TermsRouteImport.update({
   id: '/terms',
@@ -70,6 +71,11 @@ const IndexRoute = IndexRouteImport.update({
   path: '/',
   getParentRoute: () => rootRouteImport,
 } as any)
+const ApiPublicV1TestsRoute = ApiPublicV1TestsRouteImport.update({
+  id: '/api/public/v1/tests',
+  path: '/api/public/v1/tests',
+  getParentRoute: () => rootRouteImport,
+} as any)
 
 export interface FileRoutesByFullPath {
   '/': typeof IndexRoute
@@ -82,6 +88,7 @@ export interface FileRoutesByFullPath {
   '/saved': typeof SavedRoute
   '/security': typeof SecurityRoute
   '/terms': typeof TermsRoute
+  '/api/public/v1/tests': typeof ApiPublicV1TestsRoute
 }
 export interface FileRoutesByTo {
   '/': typeof IndexRoute
@@ -94,6 +101,7 @@ export interface FileRoutesByTo {
   '/saved': typeof SavedRoute
   '/security': typeof SecurityRoute
   '/terms': typeof TermsRoute
+  '/api/public/v1/tests': typeof ApiPublicV1TestsRoute
 }
 export interface FileRoutesById {
   __root__: typeof rootRouteImport
@@ -107,6 +115,7 @@ export interface FileRoutesById {
   '/saved': typeof SavedRoute
   '/security': typeof SecurityRoute
   '/terms': typeof TermsRoute
+  '/api/public/v1/tests': typeof ApiPublicV1TestsRoute
 }
 export interface FileRouteTypes {
   fileRoutesByFullPath: FileRoutesByFullPath
@@ -121,6 +130,7 @@ export interface FileRouteTypes {
     | '/saved'
     | '/security'
     | '/terms'
+    | '/api/public/v1/tests'
   fileRoutesByTo: FileRoutesByTo
   to:
     | '/'
@@ -133,6 +143,7 @@ export interface FileRouteTypes {
     | '/saved'
     | '/security'
     | '/terms'
+    | '/api/public/v1/tests'
   id:
     | '__root__'
     | '/'
@@ -145,6 +156,7 @@ export interface FileRouteTypes {
     | '/saved'
     | '/security'
     | '/terms'
+    | '/api/public/v1/tests'
   fileRoutesById: FileRoutesById
 }
 export interface RootRouteChildren {
@@ -158,6 +170,7 @@ export interface RootRouteChildren {
   SavedRoute: typeof SavedRoute
   SecurityRoute: typeof SecurityRoute
   TermsRoute: typeof TermsRoute
+  ApiPublicV1TestsRoute: typeof ApiPublicV1TestsRoute
 }
 
 declare module '@tanstack/react-router' {
@@ -232,6 +245,13 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof IndexRouteImport
       parentRoute: typeof rootRouteImport
     }
+    '/api/public/v1/tests': {
+      id: '/api/public/v1/tests'
+      path: '/api/public/v1/tests'
+      fullPath: '/api/public/v1/tests'
+      preLoaderRoute: typeof ApiPublicV1TestsRouteImport
+      parentRoute: typeof rootRouteImport
+    }
   }
 }
 
@@ -246,6 +266,7 @@ const rootRouteChildren: RootRouteChildren = {
   SavedRoute: SavedRoute,
   SecurityRoute: SecurityRoute,
   TermsRoute: TermsRoute,
+  ApiPublicV1TestsRoute: ApiPublicV1TestsRoute,
 }
 export const routeTree = rootRouteImport
   ._addFileChildren(rootRouteChildren)
