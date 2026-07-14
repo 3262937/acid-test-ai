@@ -2,7 +2,7 @@ import { createServerFn } from "@tanstack/react-start";
 import { requireSupabaseAuth } from "@/integrations/supabase/auth-middleware";
 import type { Provider } from "@/lib/user-keys.functions";
 
-type Framework = "Playwright" | "Cypress" | "Selenium";
+import { FRAMEWORKS, type Framework } from "@/components/site/generators";
 
 function buildPrompt(story: string, framework: Framework) {
   return `You are a senior QA engineer. Generate a runnable ${framework} test suite (TypeScript) for the following user story.
