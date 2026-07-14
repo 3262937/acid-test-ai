@@ -1,9 +1,9 @@
 import { createFileRoute, Link, useNavigate } from "@tanstack/react-router";
-import { useState } from "react";
+import { useEffect, useRef, useState } from "react";
 import { motion } from "framer-motion";
 import { useServerFn } from "@tanstack/react-start";
 import { toast } from "sonner";
-import { Bookmark, Zap } from "lucide-react";
+import { Bookmark, Upload, Zap } from "lucide-react";
 import { PillNav } from "@/components/site/PillNav";
 import { Footer } from "@/components/site/FinalCta";
 import { CodeTyper } from "@/components/site/CodeTyper";
@@ -12,10 +12,14 @@ import { generateCode, type Framework } from "@/components/site/generators";
 import { useSession } from "@/hooks/use-session";
 import { useCredits } from "@/hooks/use-credits";
 import { saveTest } from "@/lib/saved-tests.functions";
+import { listUserKeys, type Provider } from "@/lib/user-keys.functions";
+import { generateWithUserKey, parseUploadedFile } from "@/lib/ai-generate.functions";
 
 const ALL: Framework[] = ["Playwright", "Cypress", "Selenium"];
 const EXTRA = ["Jest", "Vitest", "Mocha", "Puppeteer", "Appium"];
 const FREE_TRY_KEY = "acidtest_free_try_used";
+
+type Engine = "lovable" | "openai" | "anthropic";
 
 export const Route = createFileRoute("/playground")({
   component: Playground,
@@ -35,14 +39,34 @@ function Playground() {
     "As a shopper, I want to apply a discount code at checkout so my order total updates before I pay.",
   );
   const [fw, setFw] = useState<Framework>("Playwright");
+  const [engine, setEngine] = useState<Engine>("lovable");
   const [runKey, setRunKey] = useState(0);
   const [visible, setVisible] = useState(false);
+  const [generatedCode, setGeneratedCode] = useState<string>("");
+  const [generating, setGenerating] = useState(false);
   const [saving, setSaving] = useState(false);
+  const [uploading, setUploading] = useState(false);
   const [buyOpen, setBuyOpen] = useState(false);
+  const [savedProviders, setSavedProviders] = useState<Provider[]>([]);
+  const fileRef = useRef<HTMLInputElement>(null);
+
   const { user } = useSession();
   const navigate = useNavigate();
   const { balance, consume, refresh } = useCredits();
   const save = useServerFn(saveTest);
+  const genByo = useServerFn(generateWithUserKey);
+  const parseFile = useServerFn(parseUploadedFile);
+  const listKeys = useServerFn(listUserKeys);
+
+  useEffect(() => {
+    if (!user) {
+      setSavedProviders([]);
+      return;
+    }
+    void listKeys()
+      .then((rows) => setSavedProviders(rows.map((r) => r.provider)))
+      .catch(() => setSavedProviders([]));
+  }, [user, listKeys]);
 
   const cases = [
     { id: "TC-001", prio: "P0", title: "Valid discount code updates total live" },
@@ -51,6 +75,39 @@ function Playground() {
   ];
 
   async function run() {
+    if (generating) return;
+
+    // BYO path: use user's key, no credit consumed.
+    if (engine !== "lovable") {
+      if (!user) {
+        toast.error("Sign in required", { description: "Save your key in Account first." });
+        return;
+      }
+      if (!savedProviders.includes(engine)) {
+        toast.error(`No ${engine === "openai" ? "OpenAI" : "Claude"} key`, {
+          description: "Add it in Account → Bring your own AI.",
+          action: { label: "Account", onClick: () => navigate({ to: "/account" }) },
+        });
+        return;
+      }
+      setGenerating(true);
+      try {
+        const res = await genByo({ data: { provider: engine, story, framework: fw } });
+        if ("error" in res) {
+          toast.error("Generation failed", { description: res.error });
+          return;
+        }
+        setGeneratedCode(res.code);
+        setVisible(false);
+        setRunKey((k) => k + 1);
+        setTimeout(() => setVisible(true), 60);
+      } finally {
+        setGenerating(false);
+      }
+      return;
+    }
+
+    // Lovable credits path (existing behaviour)
     if (!user) {
       const used = typeof window !== "undefined" && localStorage.getItem(FREE_TRY_KEY) === "1";
       if (used) {
@@ -68,12 +125,13 @@ function Playground() {
       const res = await consume();
       if (!res.ok) {
         toast.error("Out of credits", {
-          description: "Buy a pack to keep generating.",
+          description: "Buy a pack or switch to your own key.",
           action: { label: "Buy credits", onClick: () => setBuyOpen(true) },
         });
         return;
       }
     }
+    setGeneratedCode(generateCode(fw, story));
     setVisible(false);
     setRunKey((k) => k + 1);
     setTimeout(() => setVisible(true), 60);
@@ -86,7 +144,7 @@ function Playground() {
     }
     setSaving(true);
     try {
-      const code = generateCode(fw, story);
+      const code = generatedCode || generateCode(fw, story);
       const title = story.trim().slice(0, 80) || `${fw} test`;
       await save({ data: { title, story, framework: fw, code } });
       toast.success("Saved", { description: "Find it under Saved tests." });
@@ -94,6 +152,41 @@ function Playground() {
       toast.error("Save failed", { description: (e as Error).message });
     } finally {
       setSaving(false);
+    }
+  }
+
+  async function handleFile(e: React.ChangeEvent<HTMLInputElement>) {
+    const file = e.target.files?.[0];
+    e.target.value = "";
+    if (!file) return;
+    if (!user) {
+      toast.error("Sign in to upload documents");
+      return;
+    }
+    if (file.size > 5 * 1024 * 1024) {
+      toast.error("File too large", { description: "Max 5 MB." });
+      return;
+    }
+    setUploading(true);
+    try {
+      const buf = await file.arrayBuffer();
+      const base64 = arrayBufferToBase64(buf);
+      const res = await parseFile({ data: { filename: file.name, base64 } });
+      if ("error" in res) {
+        toast.error("Parse failed", { description: res.error });
+        return;
+      }
+      const clean = res.text.trim();
+      if (!clean) {
+        toast.error("Empty document");
+        return;
+      }
+      setStory(clean.slice(0, 4000));
+      toast.success("Loaded", { description: `${file.name} → user story` });
+    } catch (err) {
+      toast.error("Upload failed", { description: (err as Error).message });
+    } finally {
+      setUploading(false);
     }
   }
 
@@ -133,16 +226,71 @@ function Playground() {
           </Link>
         </div>
 
-
         <div className="grid grid-cols-1 gap-6 lg:grid-cols-[420px_1fr]">
           <div className="folder-tab space-y-4 p-6 pt-8">
-            <label className="label-mono block text-acid">User Story</label>
+            <div className="flex items-center justify-between">
+              <label className="label-mono block text-acid">User Story</label>
+              <button
+                type="button"
+                onClick={() => fileRef.current?.click()}
+                disabled={uploading}
+                className="inline-flex items-center gap-1 rounded-md border border-white/10 bg-white/[0.03] px-2 py-1 font-mono text-[10px] uppercase tracking-widest text-muted-ink transition-all hover:border-acid/40 hover:text-acid disabled:opacity-50"
+                title="Upload .docx / .xlsx / .csv / .txt"
+              >
+                <Upload size={11} />
+                {uploading ? "Parsing…" : "Upload doc"}
+              </button>
+              <input
+                ref={fileRef}
+                type="file"
+                accept=".txt,.md,.docx,.xlsx,.xls,.csv"
+                onChange={handleFile}
+                className="hidden"
+              />
+            </div>
             <textarea
               value={story}
               onChange={(e) => setStory(e.target.value)}
               rows={8}
               className="w-full resize-none rounded-md border border-white/10 bg-carbon/60 p-3 font-mono text-[13px] leading-relaxed text-ink outline-none focus:border-acid/50 focus:ring-2 focus:ring-acid/30"
             />
+
+            <label className="label-mono block text-acid">Engine</label>
+            <div className="grid grid-cols-3 gap-2">
+              {(["lovable", "openai", "anthropic"] as Engine[]).map((e) => {
+                const disabled =
+                  e !== "lovable" && (!user || !savedProviders.includes(e as Provider));
+                const label = e === "lovable" ? "Credits" : e === "openai" ? "OpenAI" : "Claude";
+                return (
+                  <button
+                    key={e}
+                    type="button"
+                    onClick={() => setEngine(e)}
+                    disabled={disabled}
+                    title={
+                      disabled
+                        ? user
+                          ? "Add key in Account → Bring your own AI"
+                          : "Sign in and add a key"
+                        : ""
+                    }
+                    className={`rounded-md border px-2 py-2 font-mono text-[11px] uppercase tracking-widest transition-all ${
+                      engine === e
+                        ? "border-acid/60 bg-acid/10 text-acid"
+                        : "border-white/10 bg-white/[0.02] text-muted-ink hover:text-ink"
+                    } disabled:cursor-not-allowed disabled:opacity-40`}
+                  >
+                    {label}
+                  </button>
+                );
+              })}
+            </div>
+            <p className="font-mono text-[10px] text-muted-ink">
+              {engine === "lovable"
+                ? "Uses 1 credit per generation."
+                : "Runs on your key — no credit charged."}
+            </p>
+
             <label className="label-mono block text-acid">Framework</label>
             <select
               value={fw}
@@ -158,9 +306,15 @@ function Playground() {
             </select>
             <button
               onClick={run}
-              className="inline-flex w-full items-center justify-center gap-2 rounded-md bg-acid px-5 py-3 font-mono text-[11px] font-bold uppercase tracking-widest text-[#0a0a0a] shadow-[0_0_28px_-4px_rgba(197,239,87,0.6)] transition-all hover:shadow-[0_0_44px_-2px_rgba(197,239,87,0.85)]"
+              disabled={generating}
+              className="inline-flex w-full items-center justify-center gap-2 rounded-md bg-acid px-5 py-3 font-mono text-[11px] font-bold uppercase tracking-widest text-[#0a0a0a] shadow-[0_0_28px_-4px_rgba(197,239,87,0.6)] transition-all hover:shadow-[0_0_44px_-2px_rgba(197,239,87,0.85)] disabled:opacity-60"
             >
-              <Zap size={12} /> Generate suite (1 credit)
+              <Zap size={12} />
+              {generating
+                ? "Generating…"
+                : engine === "lovable"
+                  ? "Generate suite (1 credit)"
+                  : `Generate with ${engine === "openai" ? "OpenAI" : "Claude"}`}
             </button>
             <button
               onClick={handleSave}
@@ -172,7 +326,6 @@ function Playground() {
               {saving ? "Saving…" : "Save this test"}
             </button>
           </div>
-
 
           <div className="space-y-4">
             {visible ? (
@@ -198,7 +351,7 @@ function Playground() {
                 </div>
                 <CodeTyper
                   key={`${fw}-${runKey}`}
-                  code={generateCode(fw, story)}
+                  code={generatedCode || generateCode(fw, story)}
                   filename={`generated.${fw.toLowerCase()}.ts`}
                 />
               </>
@@ -209,7 +362,11 @@ function Playground() {
                   Hit <span className="font-mono text-ink">Generate suite</span> to synthesize test cases and runnable {fw} code from your story.
                 </p>
                 <p className="font-mono text-[11px] text-muted-ink">
-                  {user ? "Each generation costs 1 credit." : "1 free preview, then sign in."}
+                  {engine === "lovable"
+                    ? user
+                      ? "Each generation costs 1 credit."
+                      : "1 free preview, then sign in."
+                    : `Runs on your ${engine === "openai" ? "OpenAI" : "Claude"} key.`}
                 </p>
               </div>
             )}
@@ -220,4 +377,14 @@ function Playground() {
       <Footer />
     </main>
   );
+}
+
+function arrayBufferToBase64(buf: ArrayBuffer): string {
+  const bytes = new Uint8Array(buf);
+  let bin = "";
+  const chunk = 0x8000;
+  for (let i = 0; i < bytes.length; i += chunk) {
+    bin += String.fromCharCode.apply(null, Array.from(bytes.subarray(i, i + chunk)));
+  }
+  return btoa(bin);
 }
