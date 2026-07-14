@@ -12,21 +12,32 @@ export const getCreditBalance = createServerFn({ method: "GET" })
   .middleware([requireSupabaseAuth])
   .handler(async ({ context }): Promise<Balance> => {
     const { supabase, userId } = context;
-    const { data } = await supabase
+    const { data } = await (supabase as unknown as {
+      from: (t: string) => {
+        select: (c: string) => {
+          eq: (col: string, v: string) => {
+            maybeSingle: () => Promise<{ data: { balance: number } | null }>;
+          };
+        };
+      };
+    })
       .from("credits")
       .select("balance")
       .eq("user_id", userId)
       .maybeSingle();
-    return { balance: (data?.balance as number | undefined) ?? 0 };
+    return { balance: data?.balance ?? 0 };
   });
 
 export const spendCredit = createServerFn({ method: "POST" })
   .middleware([requireSupabaseAuth])
   .handler(async ({ context }): Promise<{ balance: number } | { error: "insufficient" }> => {
     const { supabase } = context;
-    const { data, error } = await supabase.rpc("consume_credit", { _amount: 1 });
+    const { data, error } = await (supabase.rpc as unknown as (
+      fn: string,
+      args: Record<string, unknown>,
+    ) => Promise<{ data: number | null; error: { message: string } | null }>)("consume_credit", { _amount: 1 });
     if (error) throw new Error(error.message);
-    const newBalance = data as unknown as number;
+    const newBalance = data as number;
     if (newBalance === -1) return { error: "insufficient" };
     return { balance: newBalance };
   });
