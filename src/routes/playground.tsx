@@ -1,13 +1,19 @@
-import { createFileRoute } from "@tanstack/react-router";
+import { createFileRoute, Link } from "@tanstack/react-router";
 import { useState } from "react";
 import { motion } from "framer-motion";
+import { useServerFn } from "@tanstack/react-start";
+import { toast } from "sonner";
+import { Bookmark } from "lucide-react";
 import { PillNav } from "@/components/site/PillNav";
 import { Footer } from "@/components/site/FinalCta";
 import { CodeTyper } from "@/components/site/CodeTyper";
 import { generateCode, type Framework } from "@/components/site/generators";
+import { useSession } from "@/hooks/use-session";
+import { saveTest } from "@/lib/saved-tests.functions";
 
 const ALL: Framework[] = ["Playwright", "Cypress", "Selenium"];
 const EXTRA = ["Jest", "Vitest", "Mocha", "Puppeteer", "Appium"];
+
 
 export const Route = createFileRoute("/playground")({
   component: Playground,
