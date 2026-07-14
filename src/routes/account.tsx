@@ -198,6 +198,7 @@ function AccountPage() {
 
         <CreditsPanel />
         <ByoKeysPanel />
+        <CustomRagPanel />
         <ApiKeysPanel />
       </section>
       <Footer />
